@@ -18,6 +18,8 @@ type Step = 'intro' | 'goals' | 'refine' | 'approve' | 'saved'
 function App() {
   const [currentStep, setCurrentStep] = useState<Step>('intro')
   const [courseType, setCourseType] = useState<'course' | 'workshop' | null>(null)
+  const [courseSubject, setCourseSubject] = useState('')
+  const [isSubjectConfirmed, setIsSubjectConfirmed] = useState(false)
   const [goals, setGoals] = useState<Goal[]>([])
   const [currentGoal, setCurrentGoal] = useState('')
   const [refinedGoals, setRefinedGoals] = useState<Goal[]>([])
@@ -51,11 +53,11 @@ function App() {
     try {
       const goalsText = goals.map((goal, index) => `${index + 1}. ${goal.description}`).join('\n')
 
-      const prompt = `I have these initial goals for a ${courseType}:
+      const prompt = `I have these initial goals for a ${courseType} on "${courseSubject}":
 
 ${goalsText}
 
-Please help me refine these goals to make them more specific, measurable, and aligned with effective ${courseType} design principles.
+Please help me refine these goals to make them more specific, measurable, and aligned with effective ${courseType} design principles for the subject of ${courseSubject}.
 
 For each original goal, provide a refined version. Format your response exactly like this:
 
@@ -63,7 +65,7 @@ REFINED GOAL 1: [Your refined version of the first goal]
 REFINED GOAL 2: [Your refined version of the second goal]
 REFINED GOAL 3: [Your refined version of the third goal]
 
-Make each refined goal clear, actionable, and focused on student outcomes.`
+Make each refined goal clear, actionable, and focused on student outcomes specific to ${courseSubject}.`
 
       const response = await anthropic.messages.create({
         model: 'claude-3-7-sonnet-20250219',
@@ -122,6 +124,8 @@ Make each refined goal clear, actionable, and focused on student outcomes.`
   const resetApp = () => {
     setCurrentStep('intro')
     setCourseType(null)
+    setCourseSubject('')
+    setIsSubjectConfirmed(false)
     setGoals([])
     setCurrentGoal('')
     setRefinedGoals([])
@@ -151,9 +155,41 @@ Make each refined goal clear, actionable, and focused on student outcomes.`
             </button>
           </div>
         </div>
+      ) : !isSubjectConfirmed ? (
+        <div className="selection-container">
+          <p>You selected: <strong>{courseType}</strong></p>
+          <h3>What is the subject of your {courseType}?</h3>
+          <p className="instruction">Please enter the subject or topic area (e.g., "Introduction to Psychology", "Data Science Fundamentals", "Creative Writing", etc.)</p>
+          <div className="goal-input">
+            <input
+              type="text"
+              value={courseSubject}
+              onChange={(e) => setCourseSubject(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && courseSubject.trim() && setIsSubjectConfirmed(true)}
+              placeholder="e.g., Introduction to Biology, Web Development Workshop..."
+              style={{ flex: 1 }}
+            />
+          </div>
+          <div className="button-group">
+            <button
+              className="secondary-button"
+              onClick={() => setCourseType(null)}
+            >
+              Back
+            </button>
+            <button
+              className="primary-button"
+              onClick={() => setIsSubjectConfirmed(true)}
+              disabled={!courseSubject.trim()}
+            >
+              Continue
+            </button>
+          </div>
+        </div>
       ) : (
         <div className="confirmation-container">
           <p>You selected: <strong>{courseType}</strong></p>
+          <p>Subject: <strong>{courseSubject}</strong></p>
           <div className="button-group">
             <button
               className="primary-button"
@@ -163,9 +199,9 @@ Make each refined goal clear, actionable, and focused on student outcomes.`
             </button>
             <button
               className="secondary-button"
-              onClick={() => setCourseType(null)}
+              onClick={() => setIsSubjectConfirmed(false)}
             >
-              Change Selection
+              Change Subject
             </button>
           </div>
         </div>
@@ -178,7 +214,7 @@ Make each refined goal clear, actionable, and focused on student outcomes.`
     return (
     <div className="step-container">
       <h2>Define Your High-Level Goals</h2>
-      <p>What are the overarching goals for this {courseType}? Think about the big picture outcomes you want to achieve.</p>
+      <p>What are the overarching goals for this {courseType} on <strong>{courseSubject}</strong>? Think about the big picture outcomes you want to achieve.</p>
       <p className="instruction">Add your initial goals - we'll refine them together:</p>
 
       <div className="goal-input">
@@ -289,7 +325,7 @@ Make each refined goal clear, actionable, and focused on student outcomes.`
       <p>Your refined learning goals have been saved and are ready for the next steps in backward design.</p>
 
       <div className="saved-goals">
-        <h3>Saved Goals for your {courseType}:</h3>
+        <h3>Saved Goals for your {courseType} on {courseSubject}:</h3>
         {approvedGoals.map((goal, index) => (
           <div key={goal.id} className="saved-goal-item">
             <strong>Goal {index + 1}:</strong> <span>{goal.description || "Goal text missing"}</span>
