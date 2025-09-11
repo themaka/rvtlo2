@@ -196,24 +196,61 @@ main {
 
 .goal-item, .refined-goal-item, .saved-goal-item {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
   padding: 0.75rem;
   margin-bottom: 0.5rem;
   background: white;
   border-radius: 6px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   min-height: 30px;
-  width: 100%;
+  /* width: 100%; */
+  position: relative;
 }
 
-.goal-item span, .refined-goal-item p, .saved-goal-item span {
+.goal-item {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.saved-goal-item {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.goal-item span, .saved-goal-item span {
   flex: 1;
   line-height: 1.5;
   color: #333;
   font-size: 1rem;
   word-break: break-word;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
   display: block;
+  margin-right: 1rem;
+}
+
+.refined-goal-item strong {
+  color: #333;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  display: block;
+  width: 100%;
+}
+
+.refined-goal-item p {
+  margin: 0.5rem 0 0 0;
+  font-style: italic;
+  color: #333;
+  font-size: 1rem;
+  line-height: 1.5;
+  word-break: break-word;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: 100%;
 }
 
 .remove-button {
@@ -237,22 +274,21 @@ main {
   transform: scale(1.1);
 }
 
-.refined-goal-item p {
-  margin: 0.5rem 0;
-  font-style: italic;
-}
+
 
 .original-goals {
   margin: 2rem 0;
   padding: 1.5rem;
-  background: #fff3cd;
+  background: #fff8e1;
   border-radius: 8px;
-  border-left: 4px solid #ffc107;
+  border-left: 4px solid #ff9800;
 }
 
 .original-goal-item {
   padding: 0.5rem 0;
-  border-bottom: 1px solid #ffeaa7;
+  border-bottom: 1px solid #ffcc80;
+  color: #333;
+  font-weight: 500;
 }
 
 .original-goal-item:last-child {
