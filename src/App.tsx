@@ -59,13 +59,20 @@ ${goalsText}
 
 Please help me refine these goals to make them more specific, measurable, and aligned with effective ${courseType} design principles for the subject of ${courseSubject}.
 
+Important guidelines for refining:
+- Be suggestive rather than prescriptive
+- Avoid dictating specific vocabulary terms or specific issues that must be addressed
+- Use flexible language like "some examples are...", "possibly including...", "such as...", or "which may include..."
+- Focus on learning outcomes and measurable behaviors rather than exact content requirements
+- Allow for instructor flexibility in implementation
+
 For each original goal, provide a refined version. Format your response exactly like this:
 
 REFINED GOAL 1: [Your refined version of the first goal]
 REFINED GOAL 2: [Your refined version of the second goal]
 REFINED GOAL 3: [Your refined version of the third goal]
 
-Make each refined goal clear, actionable, and focused on student outcomes specific to ${courseSubject}.`
+Make each refined goal clear, actionable, and focused on student outcomes specific to ${courseSubject}, while maintaining flexibility in how the goal can be achieved.`
 
       const response = await anthropic.messages.create({
         model: 'claude-3-7-sonnet-20250219',
