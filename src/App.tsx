@@ -169,12 +169,15 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
         messages: [{ role: 'user', content: prompt }]
       })
 
+      console.log('API Response received:', response)
       const aiResponse = response.content[0].type === 'text' ? response.content[0].text : ''
       console.log('AI Assessment Response:', aiResponse)
+      console.log('AI Response length:', aiResponse.length)
 
       // Parse AI response and create assessment suggestions
       const assessmentsList: Assessment[] = []
       const lines = aiResponse.split('\n').filter(line => line.trim())
+      console.log('Filtered lines:', lines)
 
       let currentGoalIndex = -1
       let currentAssessmentText = ''
@@ -186,8 +189,10 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
         const assessmentMatch = line.match(/^ASSESSMENT\s+FOR\s+GOAL\s+(\d+):\s*(.*)$/i)
         
         if (assessmentMatch) {
+          console.log('Found assessment match:', assessmentMatch)
           // Save previous assessment if we have one
           if (currentGoalIndex >= 0 && currentAssessmentText.trim()) {
+            console.log('Saving previous assessment:', currentAssessmentText.trim())
             assessmentsList.push({
               id: Date.now() + currentGoalIndex,
               goalId: approvedGoals[currentGoalIndex].id,
@@ -199,20 +204,65 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
           // Start new assessment
           currentGoalIndex = parseInt(assessmentMatch[1]) - 1
           currentAssessmentText = assessmentMatch[2] || ''
+          console.log('Started new assessment for goal index:', currentGoalIndex)
         } else if (currentGoalIndex >= 0 && line) {
           // Continue building the current assessment text
           currentAssessmentText += (currentAssessmentText ? ' ' : '') + line
+          console.log('Building assessment text:', currentAssessmentText)
         }
       }
 
       // Don't forget the last assessment
       if (currentGoalIndex >= 0 && currentAssessmentText.trim() && currentGoalIndex < approvedGoals.length) {
+        console.log('Saving final assessment:', currentAssessmentText.trim())
         assessmentsList.push({
           id: Date.now() + currentGoalIndex,
           goalId: approvedGoals[currentGoalIndex].id,
           description: currentAssessmentText.trim(),
           isRefined: true
         })
+      }
+
+      console.log('Final assessments list:', assessmentsList)
+
+      // If no assessments were parsed, try alternative parsing methods
+      if (assessmentsList.length === 0 && aiResponse.length > 50) {
+        console.log('Trying alternative parsing methods...')
+        
+        // Try parsing by goal numbers (1., 2., 3., etc.)
+        const goalMatches = aiResponse.match(/(\d+\.\s*[^1-9]+?)(?=\d+\.|$)/gs)
+        if (goalMatches && goalMatches.length > 0) {
+          console.log('Found goal-based matches:', goalMatches)
+          goalMatches.forEach((match, index) => {
+            if (index < approvedGoals.length) {
+              const cleanText = match.replace(/^\d+\.\s*/, '').trim()
+              if (cleanText.length > 10) {
+                assessmentsList.push({
+                  id: Date.now() + index,
+                  goalId: approvedGoals[index].id,
+                  description: cleanText,
+                  isRefined: true
+                })
+              }
+            }
+          })
+        }
+        
+        // If still no luck, try splitting by double newlines or paragraphs
+        if (assessmentsList.length === 0) {
+          const paragraphs = aiResponse.split(/\n\s*\n/).filter(p => p.trim().length > 20)
+          console.log('Found paragraphs:', paragraphs)
+          paragraphs.forEach((paragraph, index) => {
+            if (index < approvedGoals.length) {
+              assessmentsList.push({
+                id: Date.now() + index,
+                goalId: approvedGoals[index].id,
+                description: paragraph.trim(),
+                isRefined: true
+              })
+            }
+          })
+        }
       }
 
       // If no assessments were parsed, create meaningful fallback assessments
@@ -287,6 +337,38 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
   const approveAssessments = () => {
     setApprovedAssessments(refinedAssessments)
     setCurrentStep('assessment-saved')
+  }
+
+  // Helper function to parse and format assessment strategies
+  const parseAssessmentStrategies = (description: string) => {
+    // First, try simple semicolon or bullet point splitting
+    let strategies = description
+      .split(/[;•]/) // Split on semicolons or bullet points
+      .map(item => item.trim())
+      .filter(item => item.length > 5) // More lenient filter
+    
+    // If that doesn't work, try sentence-based splitting
+    if (strategies.length <= 1) {
+      strategies = description
+        .split(/\.\s+(?=[A-Z])/) // Split on periods followed by capital letters
+        .map(item => item.trim())
+        .filter(item => item.length > 10)
+        .map(item => item.endsWith('.') ? item : item + '.')
+    }
+    
+    // If still no good split, just return the original as a single item
+    if (strategies.length <= 1) {
+      return [description]
+    }
+    
+    // Clean up the strategies
+    return strategies.map(item => {
+      let cleaned = item.replace(/^[•\-*]\s*/, '') // Remove bullet points
+      if (!cleaned.endsWith('.') && !cleaned.endsWith('!') && !cleaned.endsWith('?')) {
+        cleaned += '.'
+      }
+      return cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
+    })
   }
 
   const approveGoals = () => {
@@ -568,13 +650,34 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
 
       {refinedAssessments.map((assessment, index) => {
         const correspondingGoal = approvedGoals.find(goal => goal.id === assessment.goalId)
+        const strategies = parseAssessmentStrategies(assessment.description)
+        
+        // Debug logging
+        console.log('Assessment description:', assessment.description)
+        console.log('Parsed strategies:', strategies)
+        
         return (
-          <div key={assessment.id} className="refined-goals" style={{ marginBottom: '2rem' }}>
-            <div className="refined-goal-item">
-              <strong>Goal {index + 1}:</strong>
-              <p style={{ fontStyle: 'normal', marginBottom: '1rem' }}>{correspondingGoal?.description}</p>
-              <strong>Assessment Strategies:</strong>
-              <p>{assessment.description}</p>
+          <div key={assessment.id} className="assessment-review-section">
+            <div className="goal-header">
+              <h3>Goal {index + 1}</h3>
+              <p className="goal-text">{correspondingGoal?.description}</p>
+            </div>
+            
+            <div className="assessment-strategies">
+              <h4>Assessment Strategies:</h4>
+              {strategies.length > 1 ? (
+                <ul className="strategy-list">
+                  {strategies.map((strategy, strategyIndex) => (
+                    <li key={strategyIndex} className="strategy-item">
+                      {strategy}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="single-strategy">
+                  <p>{assessment.description}</p>
+                </div>
+              )}
             </div>
           </div>
         )
@@ -587,13 +690,13 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
             className="primary-button"
             onClick={approveAssessments}
           >
-            Yes, Save These Assessments
+            Save Assessments
           </button>
           <button
             className="secondary-button"
             onClick={() => setCurrentStep('assessments')}
           >
-            No, Let Me Try Again
+            Revise Assessments
           </button>
         </div>
       </div>
@@ -607,11 +710,30 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
 
       {approvedAssessments.map((assessment, index) => {
         const correspondingGoal = approvedGoals.find(goal => goal.id === assessment.goalId)
+        const strategies = parseAssessmentStrategies(assessment.description)
+        
         return (
-          <div key={assessment.id} className="saved-goals" style={{ marginBottom: '1.5rem' }}>
-            <h4>Goal {index + 1}: {correspondingGoal?.description}</h4>
-            <div className="saved-goal-item">
-              <span><strong>Assessment Strategies:</strong> {assessment.description}</span>
+          <div key={assessment.id} className="assessment-saved-section">
+            <div className="goal-header">
+              <h3>Goal {index + 1}</h3>
+              <p className="goal-text">{correspondingGoal?.description}</p>
+            </div>
+            
+            <div className="assessment-strategies">
+              <h4>Assessment Strategies:</h4>
+              {strategies.length > 1 ? (
+                <ul className="strategy-list">
+                  {strategies.map((strategy, strategyIndex) => (
+                    <li key={strategyIndex} className="strategy-item">
+                      {strategy}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="single-strategy">
+                  <p>{assessment.description}</p>
+                </div>
+              )}
             </div>
           </div>
         )

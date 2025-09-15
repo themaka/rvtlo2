@@ -344,3 +344,79 @@ main {
     align-self: flex-end;
   }
 }
+
+/* Assessment Review and Saved Styles */
+.assessment-review-section, .assessment-saved-section {
+  margin-bottom: 2.5rem;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #2196f3;
+}
+
+.goal-header h3 {
+  color: #2196f3;
+  margin-bottom: 0.5rem;
+  font-size: 1.2rem;
+}
+
+.goal-text {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+  font-style: italic;
+  color: #495057;
+  border-left: 3px solid #dee2e6;
+}
+
+.assessment-strategies h4 {
+  color: #333;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.strategy-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.strategy-item {
+  padding: 0.75rem 1rem 0.75rem 2rem;
+  margin-bottom: 0.5rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid #28a745;
+  position: relative;
+  line-height: 1.5;
+  color: #333;
+  font-size: 14px;
+}
+
+.strategy-item:before {
+  content: "✓";
+  color: #28a745;
+  font-weight: bold;
+  position: absolute;
+  left: 0.5rem;
+  top: 0.75rem;
+}
+
+.strategy-item:last-child {
+  margin-bottom: 0;
+}
+
+.single-strategy {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid #28a745;
+  color: #333;
+  line-height: 1.5;
+}
+
+.single-strategy p {
+  margin: 0;
+}
