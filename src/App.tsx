@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Anthropic from '@anthropic-ai/sdk'
 import './App.css'
 
@@ -20,7 +20,15 @@ interface Assessment {
   isRefined?: boolean
 }
 
-type Step = 'intro' | 'goals' | 'refine' | 'approve' | 'saved' | 'assessments' | 'assessment-review' | 'assessment-saved'
+interface LearningObjective {
+  id: number
+  goalId: number
+  bloomLevel: string
+  description: string
+  assessmentAlignment: string
+}
+
+type Step = 'intro' | 'goals' | 'refine' | 'approve' | 'saved' | 'assessments' | 'assessment-review' | 'assessment-saved' | 'learning-objectives' | 'objectives-review' | 'objectives-saved'
 
 function App() {
   const [currentStep, setCurrentStep] = useState<Step>('intro')
@@ -33,6 +41,8 @@ function App() {
   const [approvedGoals, setApprovedGoals] = useState<Goal[]>([])
   const [refinedAssessments, setRefinedAssessments] = useState<Assessment[]>([])
   const [approvedAssessments, setApprovedAssessments] = useState<Assessment[]>([])
+  const [refinedObjectives, setRefinedObjectives] = useState<LearningObjective[]>([])
+  const [approvedObjectives, setApprovedObjectives] = useState<LearningObjective[]>([])
   const [isRefining, setIsRefining] = useState(false)
 
   const addGoal = () => {
@@ -337,6 +347,144 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
   const approveAssessments = () => {
     setApprovedAssessments(refinedAssessments)
     setCurrentStep('assessment-saved')
+  }
+
+  const generateLearningObjectives = useCallback(async () => {
+    if (approvedGoals.length === 0 || approvedAssessments.length === 0) return
+
+    setIsRefining(true)
+    try {
+      const goalsText = approvedGoals.map((goal, index) => `${index + 1}. ${goal.description}`).join('\n')
+      const assessmentsText = approvedAssessments.map((assessment) => {
+        const goalIndex = approvedGoals.findIndex(goal => goal.id === assessment.goalId)
+        return `Goal ${goalIndex + 1} Assessment: ${assessment.description}`
+      }).join('\n\n')
+
+      const prompt = `I am creating learning objectives for a ${courseType} on "${courseSubject}" using Bloom's Taxonomy and backward design principles.
+
+APPROVED GOALS:
+${goalsText}
+
+APPROVED ASSESSMENTS:
+${assessmentsText}
+
+Please create 2-3 specific, measurable learning objectives for each goal. Each objective must:
+
+1. BLOOM'S TAXONOMY: Use action verbs from Bloom's Taxonomy (Remember, Understand, Apply, Analyze, Evaluate, Create)
+2. BACKWARD DESIGN: Align directly with the goal AND be measurable by the corresponding assessment
+3. SPECIFICITY: Be concrete and observable (avoid vague terms like "appreciate" or "understand")
+4. ALIGNMENT: Ensure the objective can be assessed by the listed assessment method
+
+Bloom's Taxonomy Action Verbs by Level:
+- Remember: define, describe, identify, list, name, recall, recognize, retrieve
+- Understand: classify, compare, explain, interpret, paraphrase, predict, summarize
+- Apply: demonstrate, execute, implement, solve, use, apply, operate
+- Analyze: analyze, break down, categorize, compare, contrast, differentiate, examine
+- Evaluate: appraise, critique, defend, evaluate, judge, justify, support
+- Create: assemble, construct, create, design, develop, formulate, generate
+
+Format your response EXACTLY like this:
+
+OBJECTIVES FOR GOAL 1:
+• [Bloom Level]: [Specific measurable objective using appropriate action verb]
+• [Bloom Level]: [Specific measurable objective using appropriate action verb]
+• [Bloom Level]: [Specific measurable objective using appropriate action verb]
+
+OBJECTIVES FOR GOAL 2:
+• [Bloom Level]: [Specific measurable objective using appropriate action verb]
+• [Bloom Level]: [Specific measurable objective using appropriate action verb]
+
+Continue for each goal. Ensure objectives progress logically through Bloom's levels when appropriate for the ${courseSubject} content.`
+
+      const response = await anthropic.messages.create({
+        model: 'claude-3-7-sonnet-20250219',
+        max_tokens: 2500,
+        messages: [{ role: 'user', content: prompt }]
+      })
+
+      console.log('Objectives API Response received:', response)
+      const aiResponse = response.content[0].type === 'text' ? response.content[0].text : ''
+      console.log('AI Objectives Response:', aiResponse)
+
+      // Parse AI response and create learning objectives
+      const objectivesList: LearningObjective[] = []
+      const lines = aiResponse.split('\n').filter(line => line.trim())
+      
+      let currentGoalIndex = -1
+      let objectiveId = Date.now()
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim()
+        
+        // Look for objective headers
+        const objectiveMatch = line.match(/^OBJECTIVES\s+FOR\s+GOAL\s+(\d+):\s*$/i)
+        
+        if (objectiveMatch) {
+          currentGoalIndex = parseInt(objectiveMatch[1]) - 1
+          console.log('Found objectives for goal index:', currentGoalIndex)
+        } else if (currentGoalIndex >= 0 && line.startsWith('•') && currentGoalIndex < approvedGoals.length) {
+          // Parse individual objective with Bloom level
+          const objectiveText = line.substring(1).trim()
+          const bloomMatch = objectiveText.match(/^(.*?):\s*(.*)$/)
+          
+          if (bloomMatch) {
+            const bloomLevel = bloomMatch[1].trim()
+            const description = bloomMatch[2].trim()
+            const relatedAssessment = approvedAssessments.find(a => a.goalId === approvedGoals[currentGoalIndex].id)
+            
+            objectivesList.push({
+              id: objectiveId++,
+              goalId: approvedGoals[currentGoalIndex].id,
+              bloomLevel: bloomLevel,
+              description: description,
+              assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
+            })
+          }
+        }
+      }
+
+      console.log('Parsed learning objectives:', objectivesList)
+      setRefinedObjectives(objectivesList)
+      setCurrentStep('objectives-review')
+    } catch (error) {
+      console.error('Error generating learning objectives:', error)
+      // Create fallback objectives if AI fails
+      const fallbackObjectives = approvedGoals.flatMap((goal, goalIndex) => {
+        const relatedAssessment = approvedAssessments.find(a => a.goalId === goal.id)
+        return [
+          {
+            id: Date.now() + goalIndex * 3,
+            goalId: goal.id,
+            bloomLevel: 'Apply',
+            description: `Demonstrate practical application of concepts related to: ${goal.description}`,
+            assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
+          },
+          {
+            id: Date.now() + goalIndex * 3 + 1,
+            goalId: goal.id,
+            bloomLevel: 'Analyze',
+            description: `Analyze and evaluate approaches for: ${goal.description}`,
+            assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
+          }
+        ]
+      })
+      setRefinedObjectives(fallbackObjectives)
+      setCurrentStep('objectives-review')
+    } finally {
+      setIsRefining(false)
+    }
+  }, [approvedGoals, approvedAssessments, courseType, courseSubject])
+
+  // Trigger learning objectives generation when step changes
+  useEffect(() => {
+    if (currentStep === 'learning-objectives') {
+      generateLearningObjectives()
+    }
+  }, [currentStep, generateLearningObjectives])
+
+  const approveLearningObjectives = () => {
+    setApprovedObjectives(refinedObjectives)
+    setCurrentStep('objectives-saved')
   }
 
   // Helper function to parse and format assessment strategies
@@ -746,10 +894,7 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
       <div className="button-group">
         <button
           className="primary-button"
-          onClick={() => {
-            // TODO: Add learning objectives step
-            alert('Learning objectives feature coming soon!')
-          }}
+          onClick={generateLearningObjectives}
         >
           Continue to Learning Objectives
         </button>
@@ -763,6 +908,130 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
     </div>
   )
 
+  const renderObjectivesReview = () => (
+    <div className="step-container">
+      <h2>Review Learning Objectives</h2>
+      <p>Here are the AI-generated learning objectives aligned with your goals and assessments using Bloom's Taxonomy:</p>
+
+      {approvedGoals.map((goal, goalIndex) => {
+        const goalObjectives = refinedObjectives.filter(obj => obj.goalId === goal.id)
+        const relatedAssessment = approvedAssessments.find(a => a.goalId === goal.id)
+        
+        return (
+          <div key={goal.id} className="objectives-review-section">
+            <div className="goal-header">
+              <h3>Goal {goalIndex + 1}</h3>
+              <p className="goal-text">{goal.description}</p>
+            </div>
+            
+            {relatedAssessment && (
+              <div className="assessment-context">
+                <h4>Related Assessment:</h4>
+                <p className="assessment-summary">{relatedAssessment.description.substring(0, 150)}...</p>
+              </div>
+            )}
+            
+            <div className="learning-objectives">
+              <h4>Learning Objectives:</h4>
+              {goalObjectives.length > 0 ? (
+                <ul className="objectives-list">
+                  {goalObjectives.map((objective) => (
+                    <li key={objective.id} className="objective-item">
+                      <span className="bloom-level">{objective.bloomLevel}:</span>
+                      <span className="objective-description">{objective.description}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="no-objectives">No objectives generated for this goal.</p>
+              )}
+            </div>
+          </div>
+        )
+      })}
+
+      <div className="confirmation-question">
+        <h3>Are these learning objectives appropriate and measurable?</h3>
+        <div className="button-group">
+          <button
+            className="primary-button"
+            onClick={approveLearningObjectives}
+          >
+            Save Learning Objectives
+          </button>
+          <button
+            className="secondary-button"
+            onClick={() => setCurrentStep('assessment-saved')}
+          >
+            Revise Objectives
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
+  const renderObjectivesSaved = () => (
+    <div className="step-container">
+      <h2>🎯 Complete Backward Design Framework!</h2>
+      <p>Congratulations! You have successfully completed the backward design process with aligned goals, assessments, and learning objectives.</p>
+
+      {approvedGoals.map((goal, goalIndex) => {
+        const goalObjectives = approvedObjectives.filter(obj => obj.goalId === goal.id)
+        const relatedAssessment = approvedAssessments.find(a => a.goalId === goal.id)
+        
+        return (
+          <div key={goal.id} className="complete-framework-section">
+            <div className="goal-header">
+              <h3>Goal {goalIndex + 1}</h3>
+              <p className="goal-text">{goal.description}</p>
+            </div>
+            
+            <div className="framework-components">
+              {relatedAssessment && (
+                <div className="assessment-component">
+                  <h4>Assessment Strategy:</h4>
+                  <p className="component-text">{relatedAssessment.description.substring(0, 200)}...</p>
+                </div>
+              )}
+              
+              <div className="objectives-component">
+                <h4>Learning Objectives:</h4>
+                {goalObjectives.length > 0 ? (
+                  <ul className="objectives-list">
+                    {goalObjectives.map((objective) => (
+                      <li key={objective.id} className="objective-item">
+                        <span className="bloom-level">{objective.bloomLevel}:</span>
+                        <span className="objective-description">{objective.description}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="no-objectives">No objectives defined for this goal.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+      })}
+
+      <div className="completion-summary">
+        <h3>Your Backward Design Framework is Complete!</h3>
+        <p>✅ <strong>{approvedGoals.length}</strong> learning goals defined</p>
+        <p>✅ <strong>{approvedAssessments.length}</strong> assessment strategies created</p>
+        <p>✅ <strong>{approvedObjectives.length}</strong> learning objectives aligned</p>
+      </div>
+
+      <div className="button-group">
+        <button
+          className="secondary-button"
+          onClick={resetApp}
+        >
+          Create New Framework
+        </button>
+      </div>
+    </div>
+  )
+
   return (
     <div className="app-container">
       <header>
@@ -770,11 +1039,14 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
         <div className="progress-indicator">
           <span className={currentStep === 'intro' ? 'active' : 'completed'}>1. Setup</span>
           <span className={currentStep === 'goals' ? 'active' : currentStep === 'intro' ? '' : 'completed'}>2. Goals</span>
-          <span className={currentStep === 'approve' ? 'active' : (currentStep === 'saved' || currentStep === 'assessments' || currentStep === 'assessment-review' || currentStep === 'assessment-saved') ? 'completed' : ''}>3. Review</span>
-          <span className={currentStep === 'saved' ? 'active' : (currentStep === 'assessments' || currentStep === 'assessment-review' || currentStep === 'assessment-saved') ? 'completed' : ''}>4. Goals Complete</span>
-          <span className={currentStep === 'assessments' ? 'active' : (currentStep === 'assessment-review' || currentStep === 'assessment-saved') ? 'completed' : ''}>5. Assessments</span>
-          <span className={currentStep === 'assessment-review' ? 'active' : currentStep === 'assessment-saved' ? 'completed' : ''}>6. Review</span>
-          <span className={currentStep === 'assessment-saved' ? 'active' : ''}>7. Complete</span>
+          <span className={currentStep === 'approve' ? 'active' : (currentStep === 'saved' || currentStep === 'assessments' || currentStep === 'assessment-review' || currentStep === 'assessment-saved' || currentStep === 'learning-objectives' || currentStep === 'objectives-review' || currentStep === 'objectives-saved') ? 'completed' : ''}>3. Review</span>
+          <span className={currentStep === 'saved' ? 'active' : (currentStep === 'assessments' || currentStep === 'assessment-review' || currentStep === 'assessment-saved' || currentStep === 'learning-objectives' || currentStep === 'objectives-review' || currentStep === 'objectives-saved') ? 'completed' : ''}>4. Goals Complete</span>
+          <span className={currentStep === 'assessments' ? 'active' : (currentStep === 'assessment-review' || currentStep === 'assessment-saved' || currentStep === 'learning-objectives' || currentStep === 'objectives-review' || currentStep === 'objectives-saved') ? 'completed' : ''}>5. Assessments</span>
+          <span className={currentStep === 'assessment-review' ? 'active' : (currentStep === 'assessment-saved' || currentStep === 'learning-objectives' || currentStep === 'objectives-review' || currentStep === 'objectives-saved') ? 'completed' : ''}>6. Review</span>
+          <span className={currentStep === 'assessment-saved' ? 'active' : (currentStep === 'learning-objectives' || currentStep === 'objectives-review' || currentStep === 'objectives-saved') ? 'completed' : ''}>7. Assessment Complete</span>
+          <span className={currentStep === 'learning-objectives' ? 'active' : (currentStep === 'objectives-review' || currentStep === 'objectives-saved') ? 'completed' : ''}>8. Learning Objectives</span>
+          <span className={currentStep === 'objectives-review' ? 'active' : currentStep === 'objectives-saved' ? 'completed' : ''}>9. Review</span>
+          <span className={currentStep === 'objectives-saved' ? 'active' : ''}>10. Complete</span>
         </div>
       </header>
 
@@ -786,6 +1058,9 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
         {currentStep === 'assessments' && renderAssessments()}
         {currentStep === 'assessment-review' && renderAssessmentReview()}
         {currentStep === 'assessment-saved' && renderAssessmentSaved()}
+        {currentStep === 'learning-objectives' && <div className="step-container"><h2>Generating Learning Objectives...</h2><p>Please wait while we create learning objectives aligned with your goals and assessments using Bloom's Taxonomy...</p></div>}
+        {currentStep === 'objectives-review' && renderObjectivesReview()}
+        {currentStep === 'objectives-saved' && renderObjectivesSaved()}
       </main>
     </div>
   )

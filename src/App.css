@@ -420,3 +420,129 @@ main {
 .single-strategy p {
   margin: 0;
 }
+
+/* Learning Objectives Styles */
+.objectives-review-section, .complete-framework-section {
+  margin-bottom: 2.5rem;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #9c27b0;
+}
+
+.assessment-context {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f3e5f5;
+  border-radius: 6px;
+  border-left: 3px solid #9c27b0;
+}
+
+.assessment-context h4 {
+  color: #7b1fa2;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.assessment-summary {
+  color: #4a148c;
+  font-style: italic;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.learning-objectives h4 {
+  color: #333;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.objectives-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.objective-item {
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid #9c27b0;
+  line-height: 1.5;
+  color: #333;
+  font-size: 14px;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.bloom-level {
+  background: #9c27b0;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  min-width: fit-content;
+}
+
+.objective-description {
+  flex: 1;
+  color: #333;
+}
+
+.no-objectives {
+  color: #666;
+  font-style: italic;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  text-align: center;
+  margin: 0;
+}
+
+.framework-components {
+  margin-top: 1.5rem;
+}
+
+.assessment-component, .objectives-component {
+  margin-bottom: 1.5rem;
+}
+
+.assessment-component h4, .objectives-component h4 {
+  color: #333;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+}
+
+.component-text {
+  color: #555;
+  line-height: 1.5;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.completion-summary {
+  background: linear-gradient(135deg, #e8f5e8 0%, #f0f8ff 100%);
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin: 2rem 0;
+  text-align: center;
+  border: 2px solid #4caf50;
+}
+
+.completion-summary h3 {
+  color: #2e7d32;
+  margin-bottom: 1rem;
+  font-size: 1.3rem;
+}
+
+.completion-summary p {
+  margin: 0.5rem 0;
+  color: #1b5e20;
+  font-weight: 500;
+}
