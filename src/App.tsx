@@ -416,57 +416,140 @@ Continue for each goal. Ensure objectives progress logically through Bloom's lev
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim()
         
-        // Look for objective headers
+        // Look for objective headers (more flexible matching)
         const objectiveMatch = line.match(/^OBJECTIVES\s+FOR\s+GOAL\s+(\d+):\s*$/i)
         
         if (objectiveMatch) {
           currentGoalIndex = parseInt(objectiveMatch[1]) - 1
           console.log('Found objectives for goal index:', currentGoalIndex)
-        } else if (currentGoalIndex >= 0 && line.startsWith('•') && currentGoalIndex < approvedGoals.length) {
-          // Parse individual objective with Bloom level
-          const objectiveText = line.substring(1).trim()
-          const bloomMatch = objectiveText.match(/^(.*?):\s*(.*)$/)
-          
-          if (bloomMatch) {
-            const bloomLevel = bloomMatch[1].trim()
-            const description = bloomMatch[2].trim()
-            const relatedAssessment = approvedAssessments.find(a => a.goalId === approvedGoals[currentGoalIndex].id)
+        } else if (currentGoalIndex >= 0 && currentGoalIndex < approvedGoals.length) {
+          // Look for lines that start with bullet points or contain Bloom level indicators
+          if (line.startsWith('•') || line.startsWith('-') || line.startsWith('*')) {
+            // Parse individual objective with Bloom level
+            const objectiveText = line.replace(/^[•\-*]\s*/, '').trim()
+            const bloomMatch = objectiveText.match(/^([^:]+):\s*(.*)$/)
             
-            objectivesList.push({
-              id: objectiveId++,
-              goalId: approvedGoals[currentGoalIndex].id,
-              bloomLevel: bloomLevel,
-              description: description,
-              assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
-            })
+            if (bloomMatch) {
+              const bloomLevel = bloomMatch[1].trim()
+              const description = bloomMatch[2].trim()
+              const relatedAssessment = approvedAssessments.find(a => a.goalId === approvedGoals[currentGoalIndex].id)
+              
+              objectivesList.push({
+                id: objectiveId++,
+                goalId: approvedGoals[currentGoalIndex].id,
+                bloomLevel: bloomLevel,
+                description: description,
+                assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
+              })
+              console.log('Added objective:', bloomLevel, description)
+            } else {
+              // If no colon found, try to extract Bloom level from common patterns
+              const bloomWords = ['remember', 'understand', 'apply', 'analyze', 'evaluate', 'create', 'recall', 'identify', 'explain', 'demonstrate', 'compare', 'critique', 'design']
+              const firstWord = objectiveText.split(' ')[0].toLowerCase()
+              if (bloomWords.includes(firstWord)) {
+                const relatedAssessment = approvedAssessments.find(a => a.goalId === approvedGoals[currentGoalIndex].id)
+                objectivesList.push({
+                  id: objectiveId++,
+                  goalId: approvedGoals[currentGoalIndex].id,
+                  bloomLevel: firstWord.charAt(0).toUpperCase() + firstWord.slice(1),
+                  description: objectiveText,
+                  assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
+                })
+                console.log('Added objective with detected Bloom level:', firstWord, objectiveText)
+              }
+            }
           }
         }
       }
 
-      console.log('Parsed learning objectives:', objectivesList)
+      console.log('Final parsed learning objectives:', objectivesList)
+
+      // If no objectives were parsed, try alternative parsing or create better fallbacks
+      if (objectivesList.length === 0) {
+        console.log('No objectives parsed, creating enhanced fallback objectives')
+        const fallbackObjectives = approvedGoals.flatMap((goal, goalIndex) => {
+          const relatedAssessment = approvedAssessments.find(a => a.goalId === goal.id)
+          const bloomLevels = ['Apply', 'Analyze', 'Evaluate']
+          const verbs = ['Demonstrate', 'Analyze', 'Evaluate']
+          
+          return bloomLevels.map((level, levelIndex) => ({
+            id: objectiveId + goalIndex * 3 + levelIndex,
+            goalId: goal.id,
+            bloomLevel: level,
+            description: `${verbs[levelIndex]} key concepts and skills related to: ${goal.description.substring(0, 80)}${goal.description.length > 80 ? '...' : ''}`,
+            assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
+          }))
+        })
+        objectivesList.push(...fallbackObjectives)
+      }
+
       setRefinedObjectives(objectivesList)
       setCurrentStep('objectives-review')
     } catch (error) {
       console.error('Error generating learning objectives:', error)
-      // Create fallback objectives if AI fails
+      // Create enhanced fallback objectives if AI fails
       const fallbackObjectives = approvedGoals.flatMap((goal, goalIndex) => {
         const relatedAssessment = approvedAssessments.find(a => a.goalId === goal.id)
-        return [
-          {
-            id: Date.now() + goalIndex * 3,
-            goalId: goal.id,
-            bloomLevel: 'Apply',
-            description: `Demonstrate practical application of concepts related to: ${goal.description}`,
-            assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
-          },
-          {
-            id: Date.now() + goalIndex * 3 + 1,
-            goalId: goal.id,
-            bloomLevel: 'Analyze',
-            description: `Analyze and evaluate approaches for: ${goal.description}`,
-            assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
-          }
-        ]
+        
+        // Create more specific objectives based on goal content
+        const goalText = goal.description.toLowerCase()
+        let objectives = []
+        
+        if (goalText.includes('3d print') || goalText.includes('printing')) {
+          objectives = [
+            {
+              id: Date.now() + goalIndex * 3,
+              goalId: goal.id,
+              bloomLevel: 'Apply',
+              description: `Demonstrate proper 3D printing techniques and troubleshoot common printing issues`,
+              assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
+            },
+            {
+              id: Date.now() + goalIndex * 3 + 1,
+              goalId: goal.id,
+              bloomLevel: 'Analyze',
+              description: `Analyze print quality issues and determine appropriate solutions for different printing scenarios`,
+              assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
+            }
+          ]
+        } else if (goalText.includes('troubleshoot') || goalText.includes('problem')) {
+          objectives = [
+            {
+              id: Date.now() + goalIndex * 3,
+              goalId: goal.id,
+              bloomLevel: 'Analyze',
+              description: `Analyze and identify root causes of technical problems systematically`,
+              assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
+            },
+            {
+              id: Date.now() + goalIndex * 3 + 1,
+              goalId: goal.id,
+              bloomLevel: 'Apply',
+              description: `Apply troubleshooting methodologies to resolve technical issues effectively`,
+              assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
+            }
+          ]
+        } else {
+          // Generic but meaningful objectives
+          objectives = [
+            {
+              id: Date.now() + goalIndex * 3,
+              goalId: goal.id,
+              bloomLevel: 'Apply',
+              description: `Apply core concepts and demonstrate practical skills related to the learning goal`,
+              assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
+            },
+            {
+              id: Date.now() + goalIndex * 3 + 1,
+              goalId: goal.id,
+              bloomLevel: 'Analyze',
+              description: `Analyze situations and evaluate appropriate approaches for achieving the learning goal`,
+              assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
+            }
+          ]
+        }
+        
+        return objectives
       })
       setRefinedObjectives(fallbackObjectives)
       setCurrentStep('objectives-review')
