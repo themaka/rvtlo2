@@ -34,7 +34,10 @@ function App() {
   const [currentStep, setCurrentStep] = useState<Step>('intro')
   const [courseType, setCourseType] = useState<'course' | 'workshop' | null>(null)
   const [courseSubject, setCourseSubject] = useState('')
+  const [targetAudience, setTargetAudience] = useState('')
+  const [instructionDuration, setInstructionDuration] = useState('')
   const [isSubjectConfirmed, setIsSubjectConfirmed] = useState(false)
+  const [isSetupComplete, setIsSetupComplete] = useState(false)
   const [goals, setGoals] = useState<Goal[]>([])
   const [currentGoal, setCurrentGoal] = useState('')
   const [refinedGoals, setRefinedGoals] = useState<Goal[]>([])
@@ -127,6 +130,48 @@ function App() {
     setIsSubjectConfirmed(true)
   }
 
+  const validateAndCompleteSetup = () => {
+    setInputErrors({})
+    setError('')
+    
+    const trimmedAudience = targetAudience.trim()
+    const trimmedDuration = instructionDuration.trim()
+    
+    if (!trimmedAudience) {
+      setInputErrors({ audience: 'Please describe your target audience.' })
+      return
+    }
+    
+    if (trimmedAudience.length < 5) {
+      setInputErrors({ audience: 'Target audience description should be at least 5 characters long.' })
+      return
+    }
+    
+    if (trimmedAudience.length > 200) {
+      setInputErrors({ audience: 'Target audience description should be under 200 characters.' })
+      return
+    }
+    
+    if (!trimmedDuration) {
+      setInputErrors({ duration: 'Please specify the instruction duration.' })
+      return
+    }
+    
+    if (trimmedDuration.length < 3) {
+      setInputErrors({ duration: 'Duration should be at least 3 characters long.' })
+      return
+    }
+    
+    if (trimmedDuration.length > 100) {
+      setInputErrors({ duration: 'Duration should be under 100 characters.' })
+      return
+    }
+    
+    setTargetAudience(trimmedAudience)
+    setInstructionDuration(trimmedDuration)
+    setIsSetupComplete(true)
+  }
+
   const removeGoal = (id: number) => {
     setGoals(prev => prev.filter(goal => goal.id !== id))
   }
@@ -146,6 +191,13 @@ function App() {
 
       const prompt = `I have these initial goals for a ${courseType} on "${courseSubject}":
 
+INSTRUCTIONAL CONTEXT:
+- Course Type: ${courseType}
+- Subject: ${courseSubject}
+- Target Audience: ${targetAudience}
+- Duration: ${instructionDuration}
+
+INITIAL GOALS:
 ${goalsText}
 
 Please help me refine these goals to make them more specific, measurable, and aligned with effective ${courseType} design principles for the subject of ${courseSubject}.
@@ -155,9 +207,10 @@ Important guidelines for refining:
 - Avoid dictating specific vocabulary terms or specific issues that must be addressed
 - Use flexible language like "some examples are...", "possibly including...", "such as...", or "which may include..."
 - Focus on learning outcomes and measurable behaviors rather than exact content requirements
+- Consider the target audience "${targetAudience}" and the duration "${instructionDuration}" when suggesting appropriate complexity and scope
 - Allow for instructor flexibility in implementation
 
-For each original goal, provide a refined version. Format your response exactly like this:
+For each original goal, provide a refined version that is appropriate for "${targetAudience}" over a "${instructionDuration}" timeframe. Format your response exactly like this:
 
 REFINED GOAL 1: [Your refined version of the first goal]
 REFINED GOAL 2: [Your refined version of the second goal]
@@ -239,19 +292,27 @@ Make each refined goal clear, actionable, and focused on student outcomes specif
 
       const prompt = `I have these approved learning goals for a ${courseType} on "${courseSubject}":
 
+INSTRUCTIONAL CONTEXT:
+- Course Type: ${courseType}
+- Subject: ${courseSubject}
+- Target Audience: ${targetAudience}
+- Duration: ${instructionDuration}
+
+APPROVED GOALS:
 ${goalsText}
 
-Please suggest specific, practical assessment strategies for each goal. Focus on authentic, meaningful ways to assess student achievement.
+Please suggest specific, practical assessment strategies for each goal. Focus on authentic, meaningful ways to assess student achievement that are appropriate for "${targetAudience}" within a "${instructionDuration}" timeframe.
 
 Important guidelines:
 - Provide 2-3 specific assessment options for each goal
 - Use flexible language like "consider...", "options might include...", "could be assessed through..."
-- Include both formative (ongoing) and summative (final) assessment methods
+- Include both formative (ongoing) and summative (final) assessment methods where appropriate for the duration
 - Focus on authentic assessment that connects to real-world application
-- Consider the ${courseType} format and time constraints
+- Consider the ${courseType} format, target audience "${targetAudience}", and time constraints of "${instructionDuration}"
 - Suggest assessments that provide actionable feedback to students
+- Ensure assessments are realistic and feasible for the given timeframe and audience
 
-For each goal, provide detailed assessment suggestions. Format your response EXACTLY like this:
+For each goal, provide detailed assessment suggestions appropriate for "${targetAudience}" over "${instructionDuration}". Format your response EXACTLY like this:
 
 ASSESSMENT FOR GOAL 1: [Provide 2-3 specific assessment methods for goal 1, separated by semicolons or bullet points]
 
@@ -468,6 +529,12 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
 
       const prompt = `I am creating learning objectives for a ${courseType} on "${courseSubject}" using Bloom's Taxonomy and backward design principles.
 
+INSTRUCTIONAL CONTEXT:
+- Course Type: ${courseType}
+- Subject: ${courseSubject}
+- Target Audience: ${targetAudience}
+- Duration: ${instructionDuration}
+
 APPROVED GOALS:
 ${goalsText}
 
@@ -476,10 +543,12 @@ ${assessmentsText}
 
 Please create 2-3 specific, measurable learning objectives for each goal. Each objective must:
 
-1. BLOOM'S TAXONOMY: Use action verbs from Bloom's Taxonomy (Remember, Understand, Apply, Analyze, Evaluate, Create)
+1. BLOOM'S TAXONOMY: Use action verbs from Bloom's Taxonomy appropriate for the target audience and course duration
 2. BACKWARD DESIGN: Align directly with the goal AND be measurable by the corresponding assessment
-3. SPECIFICITY: Be concrete and observable (avoid vague terms like "appreciate" or "understand")
-4. ALIGNMENT: Ensure the objective can be assessed by the listed assessment method
+3. AUDIENCE-APPROPRIATE: Consider the cognitive level and prior knowledge of "${targetAudience}"
+4. TIME-APPROPRIATE: Realistic for "${instructionDuration}" of instruction
+5. SPECIFICITY: Be concrete and observable (avoid vague terms like "appreciate" or "understand")
+6. ALIGNMENT: Ensure the objective can be assessed by the listed assessment method
 
 Bloom's Taxonomy Action Verbs by Level:
 - Remember: define, describe, identify, list, name, recall, recognize, retrieve
@@ -488,6 +557,12 @@ Bloom's Taxonomy Action Verbs by Level:
 - Analyze: analyze, break down, categorize, compare, contrast, differentiate, examine
 - Evaluate: appraise, critique, defend, evaluate, judge, justify, support
 - Create: assemble, construct, create, design, develop, formulate, generate
+
+IMPORTANT: Consider the target audience "${targetAudience}" when selecting appropriate Bloom's levels. For example:
+- Introductory courses: Focus more on Remember, Understand, Apply levels
+- Advanced courses: Include more Analyze, Evaluate, Create levels
+- Short workshops: Emphasize Apply and basic Analyze levels
+- Longer courses: Can progress through multiple Bloom's levels
 
 Format your response EXACTLY like this:
 
@@ -673,7 +748,7 @@ Continue for each goal. Ensure objectives progress logically through Bloom's lev
       setLoadingMessage('')
       setProgress(0)
     }
-  }, [approvedGoals, approvedAssessments, courseType, courseSubject])
+  }, [approvedGoals, approvedAssessments, courseType, courseSubject, targetAudience, instructionDuration])
 
   // Trigger learning objectives generation when step changes
   useEffect(() => {
@@ -740,7 +815,7 @@ Continue for each goal. Ensure objectives progress logically through Bloom's lev
       case 'intro':
         return true
       case 'goals':
-        return courseType && isSubjectConfirmed
+        return courseType && isSubjectConfirmed && isSetupComplete
       case 'approve':
         return goals.length > 0
       case 'saved':
@@ -851,7 +926,10 @@ Continue for each goal. Ensure objectives progress logically through Bloom's lev
     setCurrentStep('intro')
     setCourseType(null)
     setCourseSubject('')
+    setTargetAudience('')
+    setInstructionDuration('')
     setIsSubjectConfirmed(false)
+    setIsSetupComplete(false)
     setGoals([])
     setCurrentGoal('')
     setRefinedGoals([])
@@ -938,22 +1016,112 @@ Continue for each goal. Ensure objectives progress logically through Bloom's lev
             </button>
           </div>
         </div>
-      ) : (
-        <div className="confirmation-container">
+      ) : !isSetupComplete ? (
+        <div className="selection-container">
           <p>You selected: <strong>{courseType}</strong></p>
           <p>Subject: <strong>{courseSubject}</strong></p>
+          
+          <h3>Tell us about your target audience</h3>
+          <p className="instruction">Who are your learners? (e.g., "First-year college students", "Professional engineers with 5+ years experience", "High school seniors")</p>
+          <div className="goal-input">
+            <input
+              type="text"
+              value={targetAudience}
+              onChange={(e) => {
+                setTargetAudience(e.target.value)
+                if (inputErrors.audience) {
+                  setInputErrors(prev => ({ ...prev, audience: '' }))
+                }
+              }}
+              placeholder="e.g., Graduate students in computer science, Working professionals..."
+              className={inputErrors.audience ? 'error' : ''}
+            />
+          </div>
+          
+          <div className="input-helper">
+            <span className={`character-count ${targetAudience.length > 200 ? 'error' : targetAudience.length > 160 ? 'warning' : ''}`}>
+              {targetAudience.length}/200 characters
+            </span>
+            {targetAudience.length >= 5 && targetAudience.length <= 200 && !inputErrors.audience && (
+              <span className="validation-success">✓ Good length</span>
+            )}
+          </div>
+          
+          {inputErrors.audience && (
+            <div className="error-message">
+              <i className="error-icon">⚠️</i>
+              {inputErrors.audience}
+            </div>
+          )}
+
+          <h3>How long is your instruction?</h3>
+          <p className="instruction">Specify the duration (e.g., "12-week semester course", "3-hour workshop", "2-day intensive training")</p>
+          <div className="goal-input">
+            <input
+              type="text"
+              value={instructionDuration}
+              onChange={(e) => {
+                setInstructionDuration(e.target.value)
+                if (inputErrors.duration) {
+                  setInputErrors(prev => ({ ...prev, duration: '' }))
+                }
+              }}
+              placeholder="e.g., 16-week semester, 4-hour workshop, 3-day bootcamp..."
+              className={inputErrors.duration ? 'error' : ''}
+            />
+          </div>
+          
+          <div className="input-helper">
+            <span className={`character-count ${instructionDuration.length > 100 ? 'error' : instructionDuration.length > 80 ? 'warning' : ''}`}>
+              {instructionDuration.length}/100 characters
+            </span>
+            {instructionDuration.length >= 3 && instructionDuration.length <= 100 && !inputErrors.duration && (
+              <span className="validation-success">✓ Good length</span>
+            )}
+          </div>
+          
+          {inputErrors.duration && (
+            <div className="error-message">
+              <i className="error-icon">⚠️</i>
+              {inputErrors.duration}
+            </div>
+          )}
+
           <div className="button-group">
-            <button
-              className="primary-button"
-              onClick={() => setCurrentStep('goals')}
-            >
-              Continue
-            </button>
             <button
               className="secondary-button"
               onClick={() => setIsSubjectConfirmed(false)}
             >
-              Change Subject
+              Back
+            </button>
+            <button
+              className="primary-button"
+              onClick={validateAndCompleteSetup}
+              disabled={!targetAudience.trim() || !instructionDuration.trim()}
+            >
+              Continue to Goals
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="confirmation-container">
+          <h3>Setup Complete</h3>
+          <p><strong>Type:</strong> {courseType}</p>
+          <p><strong>Subject:</strong> {courseSubject}</p>
+          <p><strong>Target Audience:</strong> {targetAudience}</p>
+          <p><strong>Duration:</strong> {instructionDuration}</p>
+          <div className="button-group">
+            <button
+              className="secondary-button"
+              onClick={() => setIsSetupComplete(false)}
+            >
+              Edit Setup
+            </button>
+            <button
+              className="primary-button"
+              onClick={() => setCurrentStep('goals')}
+            >
+              Start Defining Goals
             </button>
           </div>
         </div>
