@@ -18,7 +18,7 @@
 }
 
 header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #CC0033 0%, #8F001B 100%);
   color: white;
   padding: 2rem;
   text-align: center;
@@ -81,7 +81,7 @@ header h1 {
 
 .progress-indicator span {
   padding: 0.4rem 0.8rem;
-  background: rgba(255, 255, 255, 0.2);
+  background: #FFFFFF;
   border-radius: 16px;
   font-size: 0.8rem;
   transition: all 0.3s ease;
@@ -89,29 +89,37 @@ header h1 {
   white-space: nowrap;
   min-width: 0;
   text-align: center;
+  color: #000000;
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .progress-indicator span.active {
-  background: white;
-  color: #667eea;
+  background: #CC0033;
+  color: #FFFFFF;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border: 2px solid #F5D36A;
 }
 
 .progress-indicator span.completed {
-  background: rgba(255, 255, 255, 0.4);
+  background: #FFFFFF;
+  color: #000000;
   cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .progress-indicator span.completed:hover {
-  background: rgba(255, 255, 255, 0.6);
+  background: #FFFFFF;
+  color: #000000;
   transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .progress-indicator span.upcoming {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.6);
+  background: #FFFFFF;
+  color: #000000;
   cursor: not-allowed;
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 main {
@@ -127,7 +135,7 @@ main {
 }
 
 .step-container h2 {
-  color: #2c3e50;
+  color: #333333;
   margin-bottom: 1.5rem;
   font-size: 1.875rem;
   font-weight: 700;
@@ -139,7 +147,7 @@ main {
 }
 
 .step-container h3 {
-  color: #34495e;
+  color: #000000;
   margin: 2rem 0 1rem 0;
   font-size: 1.375rem;
   font-weight: 600;
@@ -147,7 +155,7 @@ main {
 }
 
 .step-container p {
-  color: #5a6c7d;
+  color: #666666;
   line-height: 1.7;
   margin-bottom: 1.5rem;
   font-size: 1rem;
@@ -155,11 +163,11 @@ main {
 
 .instruction {
   font-style: italic;
-  color: #6c757d;
+  color: #666666;
   margin-bottom: 1.5rem;
   padding: 1rem;
-  background: #f8f9fa;
-  border-left: 4px solid #17a2b8;
+  background: #f0f9fa;
+  border-left: 4px solid #00636D;
   border-radius: 0 4px 4px 0;
   font-size: 0.95rem;
   line-height: 1.6;
@@ -176,6 +184,15 @@ main {
   justify-content: center;
   margin-top: 2rem;
   flex-wrap: wrap;
+}
+
+/* Ensure consistent button ordering: secondary (back/cancel) on left, primary (continue/save) on right */
+.button-group .secondary-button {
+  order: 1;
+}
+
+.button-group .primary-button {
+  order: 2;
 }
 
 .option-button, .primary-button, .secondary-button, .add-button {
@@ -211,32 +228,32 @@ main {
 }
 
 .primary-button {
-  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  background: linear-gradient(135deg, #CC0033 0%, #8F001B 100%);
   color: white;
   min-width: 160px;
   border: none;
 }
 
 .primary-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #0056b3 0%, #003d82 100%);
+  background: linear-gradient(135deg, #8F001B 0%, #660013 100%);
   transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0, 123, 255, 0.3);
+  box-shadow: 0 6px 12px rgba(204, 0, 51, 0.3);
 }
 
 .secondary-button {
-  background: #6c757d;
+  background: #333333;
   color: white;
   min-width: 130px;
 }
 
 .secondary-button:hover {
-  background: #545b62;
+  background: #000000;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .add-button {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  background: linear-gradient(135deg, #00636D 0%, #5AA2AD 100%);
   color: white;
   padding: 0.75rem 1.25rem;
   font-weight: 600;
@@ -284,8 +301,8 @@ main {
 
 .goal-input input:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  border-color: #CC0033;
+  box-shadow: 0 0 0 3px rgba(204, 0, 51, 0.1);
   background: white;
 }
 
@@ -328,7 +345,7 @@ main {
 }
 
 .validation-success {
-  color: #28a745;
+  color: #00636D;
   font-weight: 500;
   display: flex;
   align-items: center;
