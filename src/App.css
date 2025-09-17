@@ -2,7 +2,9 @@
   max-width: 900px;
   margin: 0 auto;
   padding: 2rem;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Helvetica Neue', sans-serif;
+  line-height: 1.6;
+  font-size: 16px;
 }
 
 .app-container {
@@ -32,8 +34,10 @@ header {
 
 .header-left h1 {
   margin: 0;
-  font-size: 2.5rem;
-  font-weight: 300;
+  font-size: 2.25rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
 }
 
 .header-right {
@@ -119,25 +123,28 @@ main {
 .step-container h2 {
   color: #2c3e50;
   margin-bottom: 1.5rem;
-  font-size: 2rem;
-  font-weight: 600;
+  font-size: 1.875rem;
+  font-weight: 700;
   text-align: center;
   padding-bottom: 1rem;
   border-bottom: 2px solid #e9ecef;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
 }
 
 .step-container h3 {
   color: #34495e;
   margin: 2rem 0 1rem 0;
-  font-size: 1.4rem;
-  font-weight: 500;
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1.4;
 }
 
 .step-container p {
-  color: #495057;
+  color: #5a6c7d;
   line-height: 1.7;
   margin-bottom: 1.5rem;
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
 .instruction {
@@ -148,7 +155,8 @@ main {
   background: #f8f9fa;
   border-left: 4px solid #17a2b8;
   border-radius: 0 4px 4px 0;
-  font-size: 1rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
 }
 
 .selection-container, .confirmation-container {
@@ -168,14 +176,14 @@ main {
   padding: 0.875rem 1.75rem;
   border: none;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.3s ease;
   font-weight: 600;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  font-size: 0.9rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  line-height: 1.2;
 }
 
 .option-button {
@@ -186,6 +194,7 @@ main {
   text-transform: none;
   font-weight: 500;
   font-size: 1rem;
+  letter-spacing: 0;
 }
 
 .option-button:hover {
@@ -277,6 +286,7 @@ main {
 .goal-input input::placeholder {
   color: #adb5bd;
   font-style: italic;
+  font-size: 0.95rem;
 }
 
 /* Error Handling Styles */
@@ -284,6 +294,40 @@ main {
   border-color: #dc3545;
   box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
   background: #fff5f5;
+}
+
+/* Input Helper Styles */
+.input-helper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+  padding: 0 0.25rem;
+  font-size: 0.85rem;
+}
+
+.character-count {
+  color: #6c757d;
+  font-weight: 500;
+  font-size: 0.8rem;
+}
+
+.character-count.warning {
+  color: #ffc107;
+}
+
+.character-count.error {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.validation-success {
+  color: #28a745;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8rem;
 }
 
 .error-message {
@@ -295,9 +339,10 @@ main {
   border: 1px solid #f5c6cb;
   border-radius: 6px;
   color: #721c24;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   margin-top: 0.5rem;
   margin-bottom: 1rem;
+  line-height: 1.5;
 }
 
 .error-icon {
@@ -464,6 +509,8 @@ main {
   border: 1px solid #c3e6cb;
   border-radius: 8px;
   color: #155724;
+  font-size: 0.95rem;
+  line-height: 1.6;
 }
 
 .next-steps em {

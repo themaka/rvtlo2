@@ -906,6 +906,15 @@ Continue for each goal. Ensure objectives progress logically through Bloom's lev
             />
           </div>
           
+          <div className="input-helper">
+            <span className={`character-count ${courseSubject.length > 100 ? 'error' : courseSubject.length > 80 ? 'warning' : ''}`}>
+              {courseSubject.length}/100 characters
+            </span>
+            {courseSubject.length >= 3 && courseSubject.length <= 100 && !inputErrors.subject && (
+              <span className="validation-success">✓ Good length</span>
+            )}
+          </div>
+          
           {inputErrors.subject && (
             <div className="error-message">
               <i className="error-icon">⚠️</i>
@@ -982,6 +991,15 @@ Continue for each goal. Ensure objectives progress logically through Bloom's lev
         >
           Add Goal
         </button>
+      </div>
+
+      <div className="input-helper">
+        <span className={`character-count ${currentGoal.length > 300 ? 'error' : currentGoal.length > 250 ? 'warning' : ''}`}>
+          {currentGoal.length}/300 characters
+        </span>
+        {currentGoal.length >= 10 && currentGoal.length <= 300 && !inputErrors.goal && (
+          <span className="validation-success">✓ Good length</span>
+        )}
       </div>
 
       {inputErrors.goal && (
