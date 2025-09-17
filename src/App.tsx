@@ -1,34 +1,22 @@
 import { useState, useEffect, useCallback } from 'react'
 import Anthropic from '@anthropic-ai/sdk'
+import type { 
+  Goal, 
+  Assessment, 
+  LearningObjective, 
+  Step
+} from './types'
+import { 
+  validateAndConfirmSubject,
+  validateAndCompleteSetup,
+  validateAndAddGoal 
+} from './utils/validation'
 import './App.css'
 
 const anthropic = new Anthropic({
   apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
   dangerouslyAllowBrowser: true,
 })
-
-interface Goal {
-  id: number
-  description: string
-  isRefined?: boolean
-}
-
-interface Assessment {
-  id: number
-  goalId: number
-  description: string
-  isRefined?: boolean
-}
-
-interface LearningObjective {
-  id: number
-  goalId: number
-  bloomLevel: string
-  description: string
-  assessmentAlignment: string
-}
-
-type Step = 'intro' | 'goals' | 'refine' | 'approve' | 'saved' | 'assessments' | 'assessment-review' | 'assessment-saved' | 'learning-objectives' | 'objectives-review' | 'objectives-saved'
 
 function App() {
   const [currentStep, setCurrentStep] = useState<Step>('intro')
@@ -50,126 +38,35 @@ function App() {
   const [loadingMessage, setLoadingMessage] = useState('')
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState('')
-  const [inputErrors, setInputErrors] = useState<{[key: string]: string}>({})
+  const [inputErrors, setInputErrors] = useState<Record<string, string>>({})
   const [showHelp, setShowHelp] = useState(false)
 
   const addGoal = () => {
-    // Clear any previous errors
-    setInputErrors({})
-    setError('')
-    
-    const trimmedGoal = currentGoal.trim()
-    
-    // Validation
-    if (!trimmedGoal) {
-      setInputErrors({ goal: 'Please enter a goal before adding.' })
-      return
-    }
-    
-    if (trimmedGoal.length < 10) {
-      setInputErrors({ goal: 'Goals should be at least 10 characters long for meaningful refinement.' })
-      return
-    }
-    
-    if (trimmedGoal.length > 300) {
-      setInputErrors({ goal: 'Goals should be under 300 characters. Consider breaking into multiple goals.' })
-      return
-    }
-    
-    // Check for duplicate goals
-    const isDuplicate = goals.some(goal => 
-      goal.description.toLowerCase().trim() === trimmedGoal.toLowerCase()
-    )
-    
-    if (isDuplicate) {
-      setInputErrors({ goal: 'This goal already exists. Please enter a different goal.' })
-      return
-    }
-    
-    // Check maximum goals limit
-    if (goals.length >= 5) {
-      setInputErrors({ goal: 'Maximum of 5 goals allowed. Please remove a goal before adding a new one.' })
-      return
-    }
-
-    const newGoal: Goal = {
-      id: Date.now(),
-      description: trimmedGoal
-    }
-    console.log('Adding new goal:', newGoal);
-    setGoals(prev => {
-      const updatedGoals = [...prev, newGoal];
-      console.log('Updated goals array:', updatedGoals);
-      return updatedGoals;
-    });
-    setCurrentGoal('');
+    return validateAndAddGoal(currentGoal, goals, {
+      setInputErrors,
+      setError,
+      setGoals,
+      setCurrentGoal
+    })
   }
 
-  const validateAndConfirmSubject = () => {
-    setInputErrors({})
-    setError('')
-    
-    const trimmedSubject = courseSubject.trim()
-    
-    if (!trimmedSubject) {
-      setInputErrors({ subject: 'Please enter a course subject.' })
-      return
-    }
-    
-    if (trimmedSubject.length < 3) {
-      setInputErrors({ subject: 'Course subject should be at least 3 characters long.' })
-      return
-    }
-    
-    if (trimmedSubject.length > 100) {
-      setInputErrors({ subject: 'Course subject should be under 100 characters.' })
-      return
-    }
-    
-    setCourseSubject(trimmedSubject)
-    setIsSubjectConfirmed(true)
+  const validateAndConfirmSubjectHandler = () => {
+    return validateAndConfirmSubject(courseSubject, {
+      setInputErrors,
+      setError,
+      setCourseSubject,
+      setIsSubjectConfirmed
+    })
   }
 
-  const validateAndCompleteSetup = () => {
-    setInputErrors({})
-    setError('')
-    
-    const trimmedAudience = targetAudience.trim()
-    const trimmedDuration = instructionDuration.trim()
-    
-    if (!trimmedAudience) {
-      setInputErrors({ audience: 'Please describe your target audience.' })
-      return
-    }
-    
-    if (trimmedAudience.length < 5) {
-      setInputErrors({ audience: 'Target audience description should be at least 5 characters long.' })
-      return
-    }
-    
-    if (trimmedAudience.length > 200) {
-      setInputErrors({ audience: 'Target audience description should be under 200 characters.' })
-      return
-    }
-    
-    if (!trimmedDuration) {
-      setInputErrors({ duration: 'Please specify the instruction duration.' })
-      return
-    }
-    
-    if (trimmedDuration.length < 3) {
-      setInputErrors({ duration: 'Duration should be at least 3 characters long.' })
-      return
-    }
-    
-    if (trimmedDuration.length > 100) {
-      setInputErrors({ duration: 'Duration should be under 100 characters.' })
-      return
-    }
-    
-    setTargetAudience(trimmedAudience)
-    setInstructionDuration(trimmedDuration)
-    setIsSetupComplete(true)
+  const validateAndCompleteSetupHandler = () => {
+    return validateAndCompleteSetup(targetAudience, instructionDuration, {
+      setInputErrors,
+      setError,
+      setTargetAudience,
+      setInstructionDuration,
+      setIsSetupComplete
+    })
   }
 
   const removeGoal = (id: number) => {
@@ -977,7 +874,7 @@ Continue for each goal. Ensure objectives progress logically through Bloom's lev
                   setInputErrors(prev => ({ ...prev, subject: '' }))
                 }
               }}
-              onKeyDown={(e) => e.key === 'Enter' && courseSubject.trim() && validateAndConfirmSubject()}
+              onKeyDown={(e) => e.key === 'Enter' && courseSubject.trim() && validateAndConfirmSubjectHandler()}
               placeholder="e.g., Introduction to Biology, Web Development Workshop..."
               style={{ flex: 1 }}
               className={inputErrors.subject ? 'error' : ''}
@@ -1009,7 +906,7 @@ Continue for each goal. Ensure objectives progress logically through Bloom's lev
             </button>
             <button
               className="primary-button"
-              onClick={validateAndConfirmSubject}
+              onClick={validateAndConfirmSubjectHandler}
               disabled={!courseSubject.trim()}
             >
               Continue
@@ -1033,6 +930,7 @@ Continue for each goal. Ensure objectives progress logically through Bloom's lev
                   setInputErrors(prev => ({ ...prev, audience: '' }))
                 }
               }}
+              onKeyDown={(e) => e.key === 'Enter' && targetAudience.trim() && instructionDuration.trim() && validateAndCompleteSetupHandler()}
               placeholder="e.g., Graduate students in computer science, Working professionals..."
               className={inputErrors.audience ? 'error' : ''}
             />
@@ -1066,6 +964,7 @@ Continue for each goal. Ensure objectives progress logically through Bloom's lev
                   setInputErrors(prev => ({ ...prev, duration: '' }))
                 }
               }}
+              onKeyDown={(e) => e.key === 'Enter' && targetAudience.trim() && instructionDuration.trim() && validateAndCompleteSetupHandler()}
               placeholder="e.g., 16-week semester, 4-hour workshop, 3-day bootcamp..."
               className={inputErrors.duration ? 'error' : ''}
             />
@@ -1096,7 +995,7 @@ Continue for each goal. Ensure objectives progress logically through Bloom's lev
             </button>
             <button
               className="primary-button"
-              onClick={validateAndCompleteSetup}
+              onClick={validateAndCompleteSetupHandler}
               disabled={!targetAudience.trim() || !instructionDuration.trim()}
             >
               Continue to Goals

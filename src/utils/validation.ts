@@ -1,0 +1,224 @@
+import type { Goal } from '../types'
+
+export interface ValidationResult {
+  isValid: boolean
+  error?: string
+}
+
+export interface ValidationCallbacks {
+  setInputErrors: (errors: Record<string, string> | ((prev: Record<string, string>) => Record<string, string>)) => void
+  setError: (error: string) => void
+  setCourseSubject?: (subject: string) => void
+  setIsSubjectConfirmed?: (confirmed: boolean) => void
+  setTargetAudience?: (audience: string) => void
+  setInstructionDuration?: (duration: string) => void
+  setIsSetupComplete?: (complete: boolean) => void
+}
+
+/**
+ * Validates course subject input
+ */
+export const validateCourseSubject = (courseSubject: string): ValidationResult => {
+  const trimmedSubject = courseSubject.trim()
+  
+  if (!trimmedSubject) {
+    return { isValid: false, error: 'Please enter a course subject.' }
+  }
+  
+  if (trimmedSubject.length < 3) {
+    return { isValid: false, error: 'Course subject should be at least 3 characters long.' }
+  }
+  
+  if (trimmedSubject.length > 100) {
+    return { isValid: false, error: 'Course subject should be under 100 characters.' }
+  }
+  
+  return { isValid: true }
+}
+
+/**
+ * Validates target audience input
+ */
+export const validateTargetAudience = (targetAudience: string): ValidationResult => {
+  const trimmedAudience = targetAudience.trim()
+  
+  if (!trimmedAudience) {
+    return { isValid: false, error: 'Please describe your target audience.' }
+  }
+  
+  if (trimmedAudience.length < 5) {
+    return { isValid: false, error: 'Target audience description should be at least 5 characters long.' }
+  }
+  
+  if (trimmedAudience.length > 200) {
+    return { isValid: false, error: 'Target audience description should be under 200 characters.' }
+  }
+  
+  return { isValid: true }
+}
+
+/**
+ * Validates instruction duration input
+ */
+export const validateInstructionDuration = (instructionDuration: string): ValidationResult => {
+  const trimmedDuration = instructionDuration.trim()
+  
+  if (!trimmedDuration) {
+    return { isValid: false, error: 'Please specify the instruction duration.' }
+  }
+  
+  if (trimmedDuration.length < 3) {
+    return { isValid: false, error: 'Duration should be at least 3 characters long.' }
+  }
+  
+  if (trimmedDuration.length > 100) {
+    return { isValid: false, error: 'Duration should be under 100 characters.' }
+  }
+  
+  return { isValid: true }
+}
+
+/**
+ * Validates goal input
+ */
+export const validateGoal = (
+  currentGoal: string,
+  existingGoals: Goal[]
+): ValidationResult => {
+  const trimmedGoal = currentGoal.trim()
+  
+  if (!trimmedGoal) {
+    return { isValid: false, error: 'Please enter a goal before adding.' }
+  }
+  
+  if (trimmedGoal.length < 10) {
+    return { isValid: false, error: 'Goals should be at least 10 characters long for meaningful refinement.' }
+  }
+  
+  if (trimmedGoal.length > 300) {
+    return { isValid: false, error: 'Goals should be under 300 characters. Consider breaking into multiple goals.' }
+  }
+  
+  // Check for duplicate goals
+  const isDuplicate = existingGoals.some(goal => 
+    goal.description.toLowerCase().trim() === trimmedGoal.toLowerCase()
+  )
+  
+  if (isDuplicate) {
+    return { isValid: false, error: 'This goal already exists. Please enter a different goal.' }
+  }
+  
+  // Check maximum goals limit
+  if (existingGoals.length >= 5) {
+    return { isValid: false, error: 'Maximum of 5 goals allowed. Please remove a goal before adding a new one.' }
+  }
+  
+  return { isValid: true }
+}
+
+/**
+ * Validates and confirms course subject with side effects
+ */
+export const validateAndConfirmSubject = (
+  courseSubject: string,
+  callbacks: ValidationCallbacks
+) => {
+  callbacks.setInputErrors({})
+  callbacks.setError('')
+  
+  const validation = validateCourseSubject(courseSubject)
+  
+  if (!validation.isValid) {
+    callbacks.setInputErrors({ subject: validation.error! })
+    return false
+  }
+  
+  const trimmedSubject = courseSubject.trim()
+  if (callbacks.setCourseSubject) {
+    callbacks.setCourseSubject(trimmedSubject)
+  }
+  if (callbacks.setIsSubjectConfirmed) {
+    callbacks.setIsSubjectConfirmed(true)
+  }
+  
+  return true
+}
+
+/**
+ * Validates and completes setup with side effects
+ */
+export const validateAndCompleteSetup = (
+  targetAudience: string,
+  instructionDuration: string,
+  callbacks: ValidationCallbacks
+) => {
+  callbacks.setInputErrors({})
+  callbacks.setError('')
+  
+  const audienceValidation = validateTargetAudience(targetAudience)
+  const durationValidation = validateInstructionDuration(instructionDuration)
+  
+  if (!audienceValidation.isValid) {
+    callbacks.setInputErrors({ audience: audienceValidation.error! })
+    return false
+  }
+  
+  if (!durationValidation.isValid) {
+    callbacks.setInputErrors({ duration: durationValidation.error! })
+    return false
+  }
+  
+  const trimmedAudience = targetAudience.trim()
+  const trimmedDuration = instructionDuration.trim()
+  
+  if (callbacks.setTargetAudience) {
+    callbacks.setTargetAudience(trimmedAudience)
+  }
+  if (callbacks.setInstructionDuration) {
+    callbacks.setInstructionDuration(trimmedDuration)
+  }
+  if (callbacks.setIsSetupComplete) {
+    callbacks.setIsSetupComplete(true)
+  }
+  
+  return true
+}
+
+/**
+ * Validates goal and adds it to the list with side effects
+ */
+export const validateAndAddGoal = (
+  currentGoal: string,
+  existingGoals: Goal[],
+  callbacks: ValidationCallbacks & {
+    setGoals: (updater: (prev: Goal[]) => Goal[]) => void
+    setCurrentGoal: (goal: string) => void
+  }
+) => {
+  // Clear any previous errors
+  callbacks.setInputErrors({})
+  callbacks.setError('')
+  
+  const validation = validateGoal(currentGoal, existingGoals)
+  
+  if (!validation.isValid) {
+    callbacks.setInputErrors({ goal: validation.error! })
+    return false
+  }
+  
+  const trimmedGoal = currentGoal.trim()
+  const newGoal: Goal = {
+    id: Date.now(),
+    description: trimmedGoal
+  }
+  
+  console.log('Adding new goal:', newGoal)
+  callbacks.setGoals(prev => {
+    const updatedGoals = [...prev, newGoal]
+    console.log('Updated goals array:', updatedGoals)
+    return updatedGoals
+  })
+  callbacks.setCurrentGoal('')
+  
+  return true
+}
