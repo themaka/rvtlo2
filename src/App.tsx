@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react'
-import Anthropic from '@anthropic-ai/sdk'
 import type { 
   Goal, 
   Assessment, 
@@ -11,12 +10,13 @@ import {
   validateAndCompleteSetup,
   validateAndAddGoal 
 } from './utils/validation'
+import { 
+  refineGoalsWithAI as refineGoalsService,
+  generateAssessments as generateAssessmentsService,
+  generateLearningObjectives as generateLearningObjectivesService,
+  type CourseContext
+} from './services/aiService'
 import './App.css'
-
-const anthropic = new Anthropic({
-  apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
-  dangerouslyAllowBrowser: true,
-})
 
 function App() {
   const [currentStep, setCurrentStep] = useState<Step>('intro')
@@ -74,332 +74,43 @@ function App() {
   }
 
   const refineGoalsWithAI = async () => {
-    if (goals.length === 0) return
-
-    setIsRefining(true)
-    setLoadingMessage('Analyzing your goals...')
-    setProgress(20)
+    if (!courseType) return // Guard against null courseType
     
-    try {
-      const goalsText = goals.map((goal, index) => `${index + 1}. ${goal.description}`).join('\n')
-
-      setLoadingMessage('Crafting refined goals with AI assistance...')
-      setProgress(50)
-
-      const prompt = `I have these initial goals for a ${courseType} on "${courseSubject}":
-
-INSTRUCTIONAL CONTEXT:
-- Course Type: ${courseType}
-- Subject: ${courseSubject}
-- Target Audience: ${targetAudience}
-- Duration: ${instructionDuration}
-
-INITIAL GOALS:
-${goalsText}
-
-Please help me refine these goals to make them more specific, measurable, and aligned with effective ${courseType} design principles for the subject of ${courseSubject}.
-
-Important guidelines for refining:
-- Be suggestive rather than prescriptive
-- Avoid dictating specific vocabulary terms or specific issues that must be addressed
-- Use flexible language like "some examples are...", "possibly including...", "such as...", or "which may include..."
-- Focus on learning outcomes and measurable behaviors rather than exact content requirements
-- Consider the target audience "${targetAudience}" and the duration "${instructionDuration}" when suggesting appropriate complexity and scope
-- Allow for instructor flexibility in implementation
-
-For each original goal, provide a refined version that is appropriate for "${targetAudience}" over a "${instructionDuration}" timeframe. Format your response exactly like this:
-
-REFINED GOAL 1: [Your refined version of the first goal]
-REFINED GOAL 2: [Your refined version of the second goal]
-REFINED GOAL 3: [Your refined version of the third goal]
-
-Make each refined goal clear, actionable, and focused on student outcomes specific to ${courseSubject}, while maintaining flexibility in how the goal can be achieved.`
-
-      const response = await anthropic.messages.create({
-        model: 'claude-3-7-sonnet-20250219',
-        max_tokens: 1500,
-        messages: [{ role: 'user', content: prompt }]
-      })
-
-      setLoadingMessage('Processing AI response...')
-      setProgress(80)
-
-      const aiResponse = response.content[0].type === 'text' ? response.content[0].text : ''
-      console.log('AI Response:', aiResponse) // Debug logging
-
-      // Parse AI response and create refined goals
-      const refinedGoalsList: Goal[] = []
-      const lines = aiResponse.split('\n').filter(line => line.trim())
-
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim()
-        // Look for lines that start with "REFINED GOAL X:"
-        const refinedGoalMatch = line.match(/^REFINED GOAL \d+:\s*(.+)$/i)
-        if (refinedGoalMatch) {
-          const goalText = refinedGoalMatch[1].trim()
-          if (goalText) {
-            refinedGoalsList.push({
-              id: Date.now() + i,
-              description: goalText,
-              isRefined: true
-            })
-          }
-        }
-      }
-
-      setLoadingMessage('Finalizing refined goals...')
-      setProgress(100)
-
-      // If no goals were parsed, fall back to original goals
-      if (refinedGoalsList.length === 0) {
-        console.log('No refined goals parsed, using original goals')
-        setRefinedGoals(goals.map(goal => ({ ...goal, isRefined: true })))
-      } else {
-        console.log('Parsed refined goals:', refinedGoalsList)
-        setRefinedGoals(refinedGoalsList)
-      }
-
-      setCurrentStep('approve')
-    } catch (error) {
-      console.error('Error refining goals:', error)
-      setLoadingMessage('Error occurred - using original goals')
-      setError('We encountered an issue while refining your goals. Don\'t worry - we\'ve kept your original goals and you can proceed with those or try again.')
-      // Fallback to original goals if AI fails
-      setRefinedGoals(goals.map(goal => ({ ...goal, isRefined: true })))
-      setCurrentStep('approve')
-    } finally {
-      setIsRefining(false)
-      setLoadingMessage('')
-      setProgress(0)
+    const context: CourseContext = {
+      courseType,
+      courseSubject,
+      targetAudience,
+      instructionDuration
     }
+
+    await refineGoalsService(goals, context, {
+      setIsRefining,
+      setLoadingMessage,
+      setProgress,
+      setError,
+      setCurrentStep,
+      setRefinedGoals
+    })
   }
 
   const generateAssessments = async () => {
-    if (approvedGoals.length === 0) return
-
-    setIsRefining(true)
-    setLoadingMessage('Analyzing your learning goals...')
-    setProgress(15)
+    if (!courseType) return // Guard against null courseType
     
-    try {
-      const goalsText = approvedGoals.map((goal, index) => `${index + 1}. ${goal.description}`).join('\n')
-
-      setLoadingMessage('Designing assessment strategies...')
-      setProgress(40)
-
-      const prompt = `I have these approved learning goals for a ${courseType} on "${courseSubject}":
-
-INSTRUCTIONAL CONTEXT:
-- Course Type: ${courseType}
-- Subject: ${courseSubject}
-- Target Audience: ${targetAudience}
-- Duration: ${instructionDuration}
-
-APPROVED GOALS:
-${goalsText}
-
-Please suggest specific, practical assessment strategies for each goal. Focus on authentic, meaningful ways to assess student achievement that are appropriate for "${targetAudience}" within a "${instructionDuration}" timeframe.
-
-Important guidelines:
-- Provide 2-3 specific assessment options for each goal
-- Use flexible language like "consider...", "options might include...", "could be assessed through..."
-- Include both formative (ongoing) and summative (final) assessment methods where appropriate for the duration
-- Focus on authentic assessment that connects to real-world application
-- Consider the ${courseType} format, target audience "${targetAudience}", and time constraints of "${instructionDuration}"
-- Suggest assessments that provide actionable feedback to students
-- Ensure assessments are realistic and feasible for the given timeframe and audience
-
-For each goal, provide detailed assessment suggestions appropriate for "${targetAudience}" over "${instructionDuration}". Format your response EXACTLY like this:
-
-ASSESSMENT FOR GOAL 1: [Provide 2-3 specific assessment methods for goal 1, separated by semicolons or bullet points]
-
-ASSESSMENT FOR GOAL 2: [Provide 2-3 specific assessment methods for goal 2, separated by semicolons or bullet points]
-
-ASSESSMENT FOR GOAL 3: [Provide 2-3 specific assessment methods for goal 3, separated by semicolons or bullet points]
-
-Make each assessment suggestion concrete, practical, and directly aligned with measuring the specific goal for ${courseSubject}.`
-
-      const response = await anthropic.messages.create({
-        model: 'claude-3-7-sonnet-20250219',
-        max_tokens: 2000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-
-      setLoadingMessage('Processing assessment recommendations...')
-      setProgress(70)
-
-      console.log('API Response received:', response)
-      const aiResponse = response.content[0].type === 'text' ? response.content[0].text : ''
-      console.log('AI Assessment Response:', aiResponse)
-      console.log('AI Response length:', aiResponse.length)
-
-      // Parse AI response and create assessment suggestions
-      const assessmentsList: Assessment[] = []
-      const lines = aiResponse.split('\n').filter(line => line.trim())
-      console.log('Filtered lines:', lines)
-
-      let currentGoalIndex = -1
-      let currentAssessmentText = ''
-
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim()
-        
-        // Look for assessment headers (more flexible matching)
-        const assessmentMatch = line.match(/^ASSESSMENT\s+FOR\s+GOAL\s+(\d+):\s*(.*)$/i)
-        
-        if (assessmentMatch) {
-          console.log('Found assessment match:', assessmentMatch)
-          // Save previous assessment if we have one
-          if (currentGoalIndex >= 0 && currentAssessmentText.trim()) {
-            console.log('Saving previous assessment:', currentAssessmentText.trim())
-            assessmentsList.push({
-              id: Date.now() + currentGoalIndex,
-              goalId: approvedGoals[currentGoalIndex].id,
-              description: currentAssessmentText.trim(),
-              isRefined: true
-            })
-          }
-          
-          // Start new assessment
-          currentGoalIndex = parseInt(assessmentMatch[1]) - 1
-          currentAssessmentText = assessmentMatch[2] || ''
-          console.log('Started new assessment for goal index:', currentGoalIndex)
-        } else if (currentGoalIndex >= 0 && line) {
-          // Continue building the current assessment text
-          currentAssessmentText += (currentAssessmentText ? ' ' : '') + line
-          console.log('Building assessment text:', currentAssessmentText)
-        }
-      }
-
-      // Don't forget the last assessment
-      if (currentGoalIndex >= 0 && currentAssessmentText.trim() && currentGoalIndex < approvedGoals.length) {
-        console.log('Saving final assessment:', currentAssessmentText.trim())
-        assessmentsList.push({
-          id: Date.now() + currentGoalIndex,
-          goalId: approvedGoals[currentGoalIndex].id,
-          description: currentAssessmentText.trim(),
-          isRefined: true
-        })
-      }
-
-      console.log('Final assessments list:', assessmentsList)
-
-      // If no assessments were parsed, try alternative parsing methods
-      if (assessmentsList.length === 0 && aiResponse.length > 50) {
-        console.log('Trying alternative parsing methods...')
-        
-        // Try parsing by goal numbers (1., 2., 3., etc.)
-        const goalMatches = aiResponse.match(/(\d+\.\s*[^1-9]+?)(?=\d+\.|$)/gs)
-        if (goalMatches && goalMatches.length > 0) {
-          console.log('Found goal-based matches:', goalMatches)
-          goalMatches.forEach((match, index) => {
-            if (index < approvedGoals.length) {
-              const cleanText = match.replace(/^\d+\.\s*/, '').trim()
-              if (cleanText.length > 10) {
-                assessmentsList.push({
-                  id: Date.now() + index,
-                  goalId: approvedGoals[index].id,
-                  description: cleanText,
-                  isRefined: true
-                })
-              }
-            }
-          })
-        }
-        
-        // If still no luck, try splitting by double newlines or paragraphs
-        if (assessmentsList.length === 0) {
-          const paragraphs = aiResponse.split(/\n\s*\n/).filter(p => p.trim().length > 20)
-          console.log('Found paragraphs:', paragraphs)
-          paragraphs.forEach((paragraph, index) => {
-            if (index < approvedGoals.length) {
-              assessmentsList.push({
-                id: Date.now() + index,
-                goalId: approvedGoals[index].id,
-                description: paragraph.trim(),
-                isRefined: true
-              })
-            }
-          })
-        }
-      }
-
-      // If no assessments were parsed, create meaningful fallback assessments
-      if (assessmentsList.length === 0) {
-        console.log('No assessments parsed, creating subject-specific fallback assessments')
-        approvedGoals.forEach((goal, index) => {
-          let fallbackAssessment = ''
-          
-          // Create subject-specific fallback based on course subject
-          const subjectLower = courseSubject.toLowerCase()
-          
-          if (subjectLower.includes('3d print') || subjectLower.includes('printing')) {
-            fallbackAssessment = `Consider practical assessments such as: hands-on printing projects with quality evaluation rubrics; troubleshooting scenarios with documented solutions; design challenges with peer review sessions; and portfolio documentation of print settings and outcomes.`
-          } else if (subjectLower.includes('program') || subjectLower.includes('coding') || subjectLower.includes('software')) {
-            fallbackAssessment = `Options might include: code review sessions with rubric-based evaluation; project-based assignments with real-world applications; peer programming exercises; and portfolio presentations demonstrating problem-solving approaches.`
-          } else if (subjectLower.includes('design') || subjectLower.includes('creative')) {
-            fallbackAssessment = `Could be assessed through: portfolio reviews with self-reflection components; peer critique sessions using structured feedback forms; design challenges with iterative improvement documentation; and presentation of creative process and final outcomes.`
-          } else if (subjectLower.includes('science') || subjectLower.includes('biology') || subjectLower.includes('chemistry')) {
-            fallbackAssessment = `Assessment strategies might include: laboratory practical examinations; research project presentations; peer-reviewed lab reports; and concept mapping exercises with real-world applications.`
-          } else if (subjectLower.includes('math') || subjectLower.includes('statistics')) {
-            fallbackAssessment = `Consider assessments such as: problem-solving portfolios with step-by-step explanations; peer tutoring sessions with documented teaching strategies; real-world application projects; and reflective journals on mathematical thinking processes.`
-          } else if (subjectLower.includes('writing') || subjectLower.includes('english') || subjectLower.includes('literature')) {
-            fallbackAssessment = `Options could include: peer review workshops with structured feedback forms; portfolio development with revision documentation; collaborative writing projects; and presentation of writing process and final products.`
-          } else {
-            // Generic but still more useful than before
-            fallbackAssessment = `Assessment approaches might include: formative check-ins through peer discussions and self-reflection exercises; summative evaluation through project-based demonstrations or portfolio presentations; and authentic assessment connecting learning to real-world applications in ${courseSubject}.`
-          }
-          
-          assessmentsList.push({
-            id: Date.now() + index,
-            goalId: goal.id,
-            description: fallbackAssessment,
-            isRefined: true
-          })
-        })
-      }
-
-      console.log('Parsed assessments:', assessmentsList)
-      
-      setLoadingMessage('Finalizing assessment strategies...')
-      setProgress(100)
-      
-      setRefinedAssessments(assessmentsList)
-      setCurrentStep('assessment-review')
-    } catch (error) {
-      console.error('Error generating assessments:', error)
-      setLoadingMessage('Error occurred - creating fallback assessments...')
-      setProgress(90)
-      
-      // Create subject-specific fallback assessments if AI fails
-      const fallbackAssessments = approvedGoals.map((goal, index) => {
-        let fallbackAssessment = ''
-        const subjectLower = courseSubject.toLowerCase()
-        
-        if (subjectLower.includes('3d print') || subjectLower.includes('printing')) {
-          fallbackAssessment = `For this 3D printing goal, consider: practical printing assessments with quality rubrics; design challenges with iterative prototyping; troubleshooting documentation; and portfolio showcasing different printing techniques and materials.`
-        } else if (subjectLower.includes('program') || subjectLower.includes('coding') || subjectLower.includes('software')) {
-          fallbackAssessment = `For this programming goal, options include: code portfolio with documentation; pair programming assessments; debugging challenges; and project presentations demonstrating problem-solving methodology.`
-        } else if (subjectLower.includes('design') || subjectLower.includes('creative')) {
-          fallbackAssessment = `For this design goal, assessment could involve: design portfolio with process documentation; peer critique sessions; iterative design challenges; and presentation of creative solutions with rationale.`
-        } else {
-          fallbackAssessment = `For this ${courseSubject} goal, consider multiple assessment approaches: formative assessments through peer discussions and check-ins; summative evaluation via projects or presentations; and authentic tasks connecting to real-world applications.`
-        }
-        
-        return {
-          id: Date.now() + index,
-          goalId: goal.id,
-          description: fallbackAssessment,
-          isRefined: true
-        }
-      })
-      setRefinedAssessments(fallbackAssessments)
-      setCurrentStep('assessment-review')
-    } finally {
-      setIsRefining(false)
-      setLoadingMessage('')
-      setProgress(0)
+    const context: CourseContext = {
+      courseType,
+      courseSubject,
+      targetAudience,
+      instructionDuration
     }
+
+    await generateAssessmentsService(approvedGoals, context, {
+      setIsRefining,
+      setLoadingMessage,
+      setProgress,
+      setError,
+      setCurrentStep,
+      setRefinedAssessments
+    })
   }
 
   const approveAssessments = () => {
@@ -408,243 +119,28 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
   }
 
   const generateLearningObjectives = useCallback(async () => {
-    if (approvedGoals.length === 0 || approvedAssessments.length === 0) return
+    if (!courseType || approvedGoals.length === 0 || approvedAssessments.length === 0) return
 
-    setIsRefining(true)
-    setLoadingMessage('Analyzing goals and assessments...')
-    setProgress(20)
-    
-    try {
-      const goalsText = approvedGoals.map((goal, index) => `${index + 1}. ${goal.description}`).join('\n')
-      const assessmentsText = approvedAssessments.map((assessment) => {
-        const goalIndex = approvedGoals.findIndex(goal => goal.id === assessment.goalId)
-        return `Goal ${goalIndex + 1} Assessment: ${assessment.description}`
-      }).join('\n\n')
-
-      setLoadingMessage('Creating learning objectives with Bloom\'s Taxonomy...')
-      setProgress(50)
-
-      const prompt = `I am creating learning objectives for a ${courseType} on "${courseSubject}" using Bloom's Taxonomy and backward design principles.
-
-INSTRUCTIONAL CONTEXT:
-- Course Type: ${courseType}
-- Subject: ${courseSubject}
-- Target Audience: ${targetAudience}
-- Duration: ${instructionDuration}
-
-APPROVED GOALS:
-${goalsText}
-
-APPROVED ASSESSMENTS:
-${assessmentsText}
-
-Please create 2-3 specific, measurable learning objectives for each goal. Each objective must:
-
-1. BLOOM'S TAXONOMY: Use action verbs from Bloom's Taxonomy appropriate for the target audience and course duration
-2. BACKWARD DESIGN: Align directly with the goal AND be measurable by the corresponding assessment
-3. AUDIENCE-APPROPRIATE: Consider the cognitive level and prior knowledge of "${targetAudience}"
-4. TIME-APPROPRIATE: Realistic for "${instructionDuration}" of instruction
-5. SPECIFICITY: Be concrete and observable (avoid vague terms like "appreciate" or "understand")
-6. ALIGNMENT: Ensure the objective can be assessed by the listed assessment method
-
-Bloom's Taxonomy Action Verbs by Level:
-- Remember: define, describe, identify, list, name, recall, recognize, retrieve
-- Understand: classify, compare, explain, interpret, paraphrase, predict, summarize
-- Apply: demonstrate, execute, implement, solve, use, apply, operate
-- Analyze: analyze, break down, categorize, compare, contrast, differentiate, examine
-- Evaluate: appraise, critique, defend, evaluate, judge, justify, support
-- Create: assemble, construct, create, design, develop, formulate, generate
-
-IMPORTANT: Consider the target audience "${targetAudience}" when selecting appropriate Bloom's levels. For example:
-- Introductory courses: Focus more on Remember, Understand, Apply levels
-- Advanced courses: Include more Analyze, Evaluate, Create levels
-- Short workshops: Emphasize Apply and basic Analyze levels
-- Longer courses: Can progress through multiple Bloom's levels
-
-Format your response EXACTLY like this:
-
-OBJECTIVES FOR GOAL 1:
-• [Bloom Level]: [Specific measurable objective using appropriate action verb]
-• [Bloom Level]: [Specific measurable objective using appropriate action verb]
-• [Bloom Level]: [Specific measurable objective using appropriate action verb]
-
-OBJECTIVES FOR GOAL 2:
-• [Bloom Level]: [Specific measurable objective using appropriate action verb]
-• [Bloom Level]: [Specific measurable objective using appropriate action verb]
-
-Continue for each goal. Ensure objectives progress logically through Bloom's levels when appropriate for the ${courseSubject} content.`
-
-      const response = await anthropic.messages.create({
-        model: 'claude-3-7-sonnet-20250219',
-        max_tokens: 2500,
-        messages: [{ role: 'user', content: prompt }]
-      })
-
-      setLoadingMessage('Processing learning objectives...')
-      setProgress(80)
-
-      console.log('Objectives API Response received:', response)
-      const aiResponse = response.content[0].type === 'text' ? response.content[0].text : ''
-      console.log('AI Objectives Response:', aiResponse)
-
-      // Parse AI response and create learning objectives
-      const objectivesList: LearningObjective[] = []
-      const lines = aiResponse.split('\n').filter(line => line.trim())
-      
-      let currentGoalIndex = -1
-      let objectiveId = Date.now()
-
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim()
-        
-        // Look for objective headers (more flexible matching)
-        const objectiveMatch = line.match(/^OBJECTIVES\s+FOR\s+GOAL\s+(\d+):\s*$/i)
-        
-        if (objectiveMatch) {
-          currentGoalIndex = parseInt(objectiveMatch[1]) - 1
-          console.log('Found objectives for goal index:', currentGoalIndex)
-        } else if (currentGoalIndex >= 0 && currentGoalIndex < approvedGoals.length) {
-          // Look for lines that start with bullet points or contain Bloom level indicators
-          if (line.startsWith('•') || line.startsWith('-') || line.startsWith('*')) {
-            // Parse individual objective with Bloom level
-            const objectiveText = line.replace(/^[•\-*]\s*/, '').trim()
-            const bloomMatch = objectiveText.match(/^([^:]+):\s*(.*)$/)
-            
-            if (bloomMatch) {
-              const bloomLevel = bloomMatch[1].trim()
-              const description = bloomMatch[2].trim()
-              const relatedAssessment = approvedAssessments.find(a => a.goalId === approvedGoals[currentGoalIndex].id)
-              
-              objectivesList.push({
-                id: objectiveId++,
-                goalId: approvedGoals[currentGoalIndex].id,
-                bloomLevel: bloomLevel,
-                description: description,
-                assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
-              })
-              console.log('Added objective:', bloomLevel, description)
-            } else {
-              // If no colon found, try to extract Bloom level from common patterns
-              const bloomWords = ['remember', 'understand', 'apply', 'analyze', 'evaluate', 'create', 'recall', 'identify', 'explain', 'demonstrate', 'compare', 'critique', 'design']
-              const firstWord = objectiveText.split(' ')[0].toLowerCase()
-              if (bloomWords.includes(firstWord)) {
-                const relatedAssessment = approvedAssessments.find(a => a.goalId === approvedGoals[currentGoalIndex].id)
-                objectivesList.push({
-                  id: objectiveId++,
-                  goalId: approvedGoals[currentGoalIndex].id,
-                  bloomLevel: firstWord.charAt(0).toUpperCase() + firstWord.slice(1),
-                  description: objectiveText,
-                  assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
-                })
-                console.log('Added objective with detected Bloom level:', firstWord, objectiveText)
-              }
-            }
-          }
-        }
-      }
-
-      console.log('Final parsed learning objectives:', objectivesList)
-
-      // If no objectives were parsed, try alternative parsing or create better fallbacks
-      if (objectivesList.length === 0) {
-        console.log('No objectives parsed, creating enhanced fallback objectives')
-        const fallbackObjectives = approvedGoals.flatMap((goal, goalIndex) => {
-          const relatedAssessment = approvedAssessments.find(a => a.goalId === goal.id)
-          const bloomLevels = ['Apply', 'Analyze', 'Evaluate']
-          const verbs = ['Demonstrate', 'Analyze', 'Evaluate']
-          
-          return bloomLevels.map((level, levelIndex) => ({
-            id: objectiveId + goalIndex * 3 + levelIndex,
-            goalId: goal.id,
-            bloomLevel: level,
-            description: `${verbs[levelIndex]} key concepts and skills related to: ${goal.description.substring(0, 80)}${goal.description.length > 80 ? '...' : ''}`,
-            assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
-          }))
-        })
-        objectivesList.push(...fallbackObjectives)
-      }
-
-      setLoadingMessage('Finalizing learning objectives...')
-      setProgress(100)
-
-      setRefinedObjectives(objectivesList)
-      setCurrentStep('objectives-review')
-    } catch (error) {
-      console.error('Error generating learning objectives:', error)
-      setLoadingMessage('Error occurred - creating fallback objectives...')
-      setProgress(90)
-      
-      // Create enhanced fallback objectives if AI fails
-      const fallbackObjectives = approvedGoals.flatMap((goal, goalIndex) => {
-        const relatedAssessment = approvedAssessments.find(a => a.goalId === goal.id)
-        
-        // Create more specific objectives based on goal content
-        const goalText = goal.description.toLowerCase()
-        let objectives = []
-        
-        if (goalText.includes('3d print') || goalText.includes('printing')) {
-          objectives = [
-            {
-              id: Date.now() + goalIndex * 3,
-              goalId: goal.id,
-              bloomLevel: 'Apply',
-              description: `Demonstrate proper 3D printing techniques and troubleshoot common printing issues`,
-              assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
-            },
-            {
-              id: Date.now() + goalIndex * 3 + 1,
-              goalId: goal.id,
-              bloomLevel: 'Analyze',
-              description: `Analyze print quality issues and determine appropriate solutions for different printing scenarios`,
-              assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
-            }
-          ]
-        } else if (goalText.includes('troubleshoot') || goalText.includes('problem')) {
-          objectives = [
-            {
-              id: Date.now() + goalIndex * 3,
-              goalId: goal.id,
-              bloomLevel: 'Analyze',
-              description: `Analyze and identify root causes of technical problems systematically`,
-              assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
-            },
-            {
-              id: Date.now() + goalIndex * 3 + 1,
-              goalId: goal.id,
-              bloomLevel: 'Apply',
-              description: `Apply troubleshooting methodologies to resolve technical issues effectively`,
-              assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
-            }
-          ]
-        } else {
-          // Generic but meaningful objectives
-          objectives = [
-            {
-              id: Date.now() + goalIndex * 3,
-              goalId: goal.id,
-              bloomLevel: 'Apply',
-              description: `Apply core concepts and demonstrate practical skills related to the learning goal`,
-              assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
-            },
-            {
-              id: Date.now() + goalIndex * 3 + 1,
-              goalId: goal.id,
-              bloomLevel: 'Analyze',
-              description: `Analyze situations and evaluate appropriate approaches for achieving the learning goal`,
-              assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
-            }
-          ]
-        }
-        
-        return objectives
-      })
-      setRefinedObjectives(fallbackObjectives)
-      setCurrentStep('objectives-review')
-    } finally {
-      setIsRefining(false)
-      setLoadingMessage('')
-      setProgress(0)
+    const context: CourseContext = {
+      courseType,
+      courseSubject,
+      targetAudience,
+      instructionDuration
     }
+
+    await generateLearningObjectivesService(
+      approvedGoals,
+      approvedAssessments,
+      context,
+      {
+        setIsRefining,
+        setLoadingMessage,
+        setProgress,
+        setError,
+        setCurrentStep,
+        setRefinedObjectives
+      }
+    )
   }, [approvedGoals, approvedAssessments, courseType, courseSubject, targetAudience, instructionDuration])
 
   // Trigger learning objectives generation when step changes
@@ -789,7 +285,7 @@ Continue for each goal. Ensure objectives progress logically through Bloom's lev
       }
     }
     
-    return helpContent[step] || null
+    return helpContent[step as keyof typeof helpContent] || null
   }
 
   const renderHelpPanel = () => {
@@ -810,7 +306,7 @@ Continue for each goal. Ensure objectives progress logically through Bloom's lev
         </div>
         <div className="help-content">
           <ul>
-            {helpContent.content.map((tip, index) => (
+            {helpContent.content.map((tip: string, index: number) => (
               <li key={index}>{tip}</li>
             ))}
           </ul>
