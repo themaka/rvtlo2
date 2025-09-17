@@ -10,6 +10,14 @@ import {
   validateAndCompleteSetup,
   validateAndAddGoal 
 } from './utils/validation'
+import {
+  getStepStatus,
+  canNavigateToStep,
+  navigateToStep as navigateToStepUtil,
+  resetApplication,
+  createNavigationState,
+  type NavigationActions
+} from './utils/navigation'
 import { 
   refineGoalsWithAI as refineGoalsService,
   generateAssessments as generateAssessmentsService,
@@ -192,49 +200,55 @@ function App() {
     setCurrentStep('saved')
   }
 
-  const getStepStatus = (step: string) => {
-    const stepOrder = ['intro', 'goals', 'approve', 'saved', 'assessments', 'assessment-review', 'assessment-saved', 'learning-objectives', 'objectives-review', 'objectives-saved']
-    const currentIndex = stepOrder.indexOf(currentStep)
-    const stepIndex = stepOrder.indexOf(step)
-    
-    if (stepIndex < currentIndex) return 'completed'
-    if (stepIndex === currentIndex) return 'active'
-    return 'upcoming'
-  }
+  // Create navigation state helper
+  const getNavigationState = () => createNavigationState(
+    currentStep,
+    courseType,
+    isSubjectConfirmed,
+    isSetupComplete,
+    goals,
+    approvedGoals,
+    refinedAssessments,
+    approvedAssessments,
+    refinedObjectives,
+    approvedObjectives
+  )
 
-  const canNavigateToStep = (targetStep: Step) => {
-    // Define navigation rules
-    switch (targetStep) {
-      case 'intro':
-        return true
-      case 'goals':
-        return courseType && isSubjectConfirmed && isSetupComplete
-      case 'approve':
-        return goals.length > 0
-      case 'saved':
-        return approvedGoals.length > 0
-      case 'assessments':
-        return approvedGoals.length > 0
-      case 'assessment-review':
-        return refinedAssessments.length > 0
-      case 'assessment-saved':
-        return approvedAssessments.length > 0
-      case 'learning-objectives':
-        return approvedGoals.length > 0 && approvedAssessments.length > 0
-      case 'objectives-review':
-        return refinedObjectives.length > 0
-      case 'objectives-saved':
-        return approvedObjectives.length > 0
-      default:
-        return false
-    }
-  }
-
+  // Navigation wrapper functions that use the utility functions
   const navigateToStep = (targetStep: Step) => {
-    if (canNavigateToStep(targetStep)) {
-      setError('')
-      setCurrentStep(targetStep)
+    const state = getNavigationState()
+    navigateToStepUtil(targetStep, state, { setCurrentStep, setError })
+  }
+
+  const canNavigateToStepCheck = (targetStep: Step) => {
+    const state = getNavigationState()
+    return canNavigateToStep(targetStep, state)
+  }
+
+  const getStepStatusCheck = (step: string) => {
+    return getStepStatus(step, currentStep)
+  }
+
+  const resetApp = () => {
+    const actions: NavigationActions = {
+      setCurrentStep,
+      setError,
+      setCourseType,
+      setCourseSubject,
+      setTargetAudience,
+      setInstructionDuration,
+      setIsSubjectConfirmed,
+      setIsSetupComplete,
+      setGoals,
+      setCurrentGoal,
+      setRefinedGoals,
+      setApprovedGoals,
+      setRefinedAssessments,
+      setApprovedAssessments,
+      setRefinedObjectives,
+      setApprovedObjectives
     }
+    resetApplication(actions)
   }
 
   const getHelpContent = (step: Step) => {
@@ -313,22 +327,6 @@ function App() {
         </div>
       </div>
     )
-  }
-
-  const resetApp = () => {
-    setCurrentStep('intro')
-    setCourseType(null)
-    setCourseSubject('')
-    setTargetAudience('')
-    setInstructionDuration('')
-    setIsSubjectConfirmed(false)
-    setIsSetupComplete(false)
-    setGoals([])
-    setCurrentGoal('')
-    setRefinedGoals([])
-    setApprovedGoals([])
-    setRefinedAssessments([])
-    setApprovedAssessments([])
   }
 
   const renderIntro = () => (
@@ -1028,72 +1026,72 @@ function App() {
         </div>
         <div className="progress-indicator">
           <span 
-            className={getStepStatus('intro')}
+            className={getStepStatusCheck('intro')}
             onClick={() => navigateToStep('intro')}
-            style={{ cursor: canNavigateToStep('intro') ? 'pointer' : 'default' }}
+            style={{ cursor: canNavigateToStepCheck('intro') ? 'pointer' : 'default' }}
           >
             1. Setup
           </span>
           <span 
-            className={getStepStatus('goals')}
+            className={getStepStatusCheck('goals')}
             onClick={() => navigateToStep('goals')}
-            style={{ cursor: canNavigateToStep('goals') ? 'pointer' : 'default' }}
+            style={{ cursor: canNavigateToStepCheck('goals') ? 'pointer' : 'default' }}
           >
             2. Goals
           </span>
           <span 
-            className={getStepStatus('approve')}
+            className={getStepStatusCheck('approve')}
             onClick={() => navigateToStep('approve')}
-            style={{ cursor: canNavigateToStep('approve') ? 'pointer' : 'default' }}
+            style={{ cursor: canNavigateToStepCheck('approve') ? 'pointer' : 'default' }}
           >
             3. Review
           </span>
           <span 
-            className={getStepStatus('saved')}
+            className={getStepStatusCheck('saved')}
             onClick={() => navigateToStep('saved')}
-            style={{ cursor: canNavigateToStep('saved') ? 'pointer' : 'default' }}
+            style={{ cursor: canNavigateToStepCheck('saved') ? 'pointer' : 'default' }}
           >
             4. Goals Complete
           </span>
           <span 
-            className={getStepStatus('assessments')}
+            className={getStepStatusCheck('assessments')}
             onClick={() => navigateToStep('assessments')}
-            style={{ cursor: canNavigateToStep('assessments') ? 'pointer' : 'default' }}
+            style={{ cursor: canNavigateToStepCheck('assessments') ? 'pointer' : 'default' }}
           >
             5. Assessments
           </span>
           <span 
-            className={getStepStatus('assessment-review')}
+            className={getStepStatusCheck('assessment-review')}
             onClick={() => navigateToStep('assessment-review')}
-            style={{ cursor: canNavigateToStep('assessment-review') ? 'pointer' : 'default' }}
+            style={{ cursor: canNavigateToStepCheck('assessment-review') ? 'pointer' : 'default' }}
           >
             6. Review
           </span>
           <span 
-            className={getStepStatus('assessment-saved')}
+            className={getStepStatusCheck('assessment-saved')}
             onClick={() => navigateToStep('assessment-saved')}
-            style={{ cursor: canNavigateToStep('assessment-saved') ? 'pointer' : 'default' }}
+            style={{ cursor: canNavigateToStepCheck('assessment-saved') ? 'pointer' : 'default' }}
           >
             7. Assessment Complete
           </span>
           <span 
-            className={getStepStatus('learning-objectives')}
+            className={getStepStatusCheck('learning-objectives')}
             onClick={() => navigateToStep('learning-objectives')}
-            style={{ cursor: canNavigateToStep('learning-objectives') ? 'pointer' : 'default' }}
+            style={{ cursor: canNavigateToStepCheck('learning-objectives') ? 'pointer' : 'default' }}
           >
             8. Learning Objectives
           </span>
           <span 
-            className={getStepStatus('objectives-review')}
+            className={getStepStatusCheck('objectives-review')}
             onClick={() => navigateToStep('objectives-review')}
-            style={{ cursor: canNavigateToStep('objectives-review') ? 'pointer' : 'default' }}
+            style={{ cursor: canNavigateToStepCheck('objectives-review') ? 'pointer' : 'default' }}
           >
             9. Review
           </span>
           <span 
-            className={getStepStatus('objectives-saved')}
+            className={getStepStatusCheck('objectives-saved')}
             onClick={() => navigateToStep('objectives-saved')}
-            style={{ cursor: canNavigateToStep('objectives-saved') ? 'pointer' : 'default' }}
+            style={{ cursor: canNavigateToStepCheck('objectives-saved') ? 'pointer' : 'default' }}
           >
             10. Complete
           </span>
