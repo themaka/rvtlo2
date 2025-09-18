@@ -24,6 +24,7 @@ import {
   generateLearningObjectives as generateLearningObjectivesService,
   type CourseContext
 } from './services/aiService'
+import { LoadingIndicator } from './components'
 import './App.css'
 
 function App() {
@@ -610,15 +611,7 @@ function App() {
       </div>
 
       {isRefining && (
-        <div className="loading-indicator">
-          <div className="loading-header">
-            <div className="loading-spinner"></div>
-            <p className="loading-message">{loadingMessage}</p>
-          </div>
-          <div className="loading-bar">
-            <div className="loading-progress" style={{ width: `${progress}%` }}></div>
-          </div>
-        </div>
+        <LoadingIndicator message={loadingMessage} progress={progress} />
       )}
     </div>
     );
@@ -740,15 +733,7 @@ function App() {
       </div>
 
       {isRefining && (
-        <div className="loading-indicator">
-          <div className="loading-header">
-            <div className="loading-spinner"></div>
-            <p className="loading-message">{loadingMessage}</p>
-          </div>
-          <div className="loading-bar">
-            <div className="loading-progress" style={{ width: `${progress}%` }}></div>
-          </div>
-        </div>
+        <LoadingIndicator message={loadingMessage} progress={progress} />
       )}
     </div>
   )
@@ -870,15 +855,7 @@ function App() {
       </div>
 
       {isRefining && (
-        <div className="loading-indicator">
-          <div className="loading-header">
-            <div className="loading-spinner"></div>
-            <p className="loading-message">{loadingMessage}</p>
-          </div>
-          <div className="loading-bar">
-            <div className="loading-progress" style={{ width: `${progress}%` }}></div>
-          </div>
-        </div>
+        <LoadingIndicator message={loadingMessage} progress={progress} />
       )}
     </div>
   )
@@ -1113,12 +1090,7 @@ function App() {
             <h2>Generating Learning Objectives...</h2>
             <p>Please wait while we create learning objectives aligned with your goals and assessments using Bloom's Taxonomy...</p>
             {isRefining && (
-              <div className="loading-indicator">
-                <div className="loading-bar">
-                  <div className="loading-progress" style={{ width: `${progress}%` }}></div>
-                </div>
-                <p className="loading-message">{loadingMessage}</p>
-              </div>
+              <LoadingIndicator message={loadingMessage} progress={progress} />
             )}
           </div>
         )}
