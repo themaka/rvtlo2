@@ -121,17 +121,32 @@ src/
    ```
 
 3. **Environment Setup**
-   Create `.env` file with:
-   ```
+   
+   **Local Development:**
+   
+   ```bash
+   # Copy the environment template
+   cp .env.example .env
+   
+   # Edit .env and add your Anthropic API key
    VITE_ANTHROPIC_API_KEY=your_anthropic_api_key_here
    ```
+   
+   **Netlify Deployment:**
+   1. Go to your Netlify site dashboard
+   2. Navigate to Site settings → Environment variables
+   3. Add: `VITE_ANTHROPIC_API_KEY` with your API key value
+   
+   Get your API key from: [Anthropic Console](https://console.anthropic.com/)
 
 4. **Development Server**
+   
    ```bash
    npm run dev
    ```
 
 5. **Build for Production**
+   
    ```bash
    npm run build
    ```
@@ -146,6 +161,7 @@ The application follows a **modular architecture** with clear separation of conc
 - **Type Layer**: TypeScript definitions and interfaces (types/)
 
 This architecture promotes:
+
 - **Testability**: Isolated modules can be unit tested independently
 - **Maintainability**: Clear boundaries between different concerns
 - **Reusability**: Utility functions can be shared across components
