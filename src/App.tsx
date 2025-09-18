@@ -24,7 +24,7 @@ import {
   generateLearningObjectives as generateLearningObjectivesService,
   type CourseContext
 } from './services/aiService'
-import { LoadingIndicator, HelpPanel, AppHeader, ProgressIndicator } from './components'
+import { LoadingIndicator, HelpPanel, AppHeader, ProgressIndicator, StepContainer } from './components'
 import './App.css'
 
 function App() {
@@ -253,10 +253,10 @@ function App() {
   }
 
   const renderIntro = () => (
-    <div className="step-container">
-      <h2>Welcome to the Course Goal Builder</h2>
-      <p>This tool will help you define clear, actionable goals for your {courseType || 'course/workshop'} using backward design principles.</p>
-
+    <StepContainer 
+      title="Welcome to the Course Goal Builder"
+      description={`This tool will help you define clear, actionable goals for your ${courseType || 'course/workshop'} using backward design principles.`}
+    >
       {!courseType ? (
         <div className="selection-container">
           <h3>What type of instruction are you planning?</h3>
@@ -442,14 +442,15 @@ function App() {
           </div>
         </div>
       )}
-    </div>
+    </StepContainer>
   )
 
   const renderGoals = () => {
     console.log('Rendering goals component with goals state:', goals);
     return (
-    <div className="step-container">
-      <h2>Define Your High-Level Goals</h2>
+    <StepContainer 
+      title="Define Your High-Level Goals"
+    >
       <p>What are the overarching goals for this {courseType} on <strong>{courseSubject}</strong>? Think about the big picture outcomes you want to achieve.</p>
       <p className="instruction">Add your initial goals - we'll refine them together:</p>
 
@@ -535,14 +536,15 @@ function App() {
       {isRefining && (
         <LoadingIndicator message={loadingMessage} progress={progress} />
       )}
-    </div>
+    </StepContainer>
     );
   }
 
   const renderApprove = () => (
-    <div className="step-container">
-      <h2>Review Refined Goals</h2>
-      <p>Here's how Claude has refined your goals to make them more specific and actionable:</p>
+    <StepContainer 
+      title="Review Refined Goals"
+      description="Here's how Claude has refined your goals to make them more specific and actionable:"
+    >
 
       {error && (
         <div className="error-message">
@@ -586,13 +588,14 @@ function App() {
           </button>
         </div>
       </div>
-    </div>
+    </StepContainer>
   )
 
   const renderSaved = () => (
-    <div className="step-container">
-      <h2>✅ Goals Saved Successfully!</h2>
-      <p>Your refined learning goals have been saved and are ready for the next steps in backward design.</p>
+    <StepContainer 
+      title="✅ Goals Saved Successfully!"
+      description="Your refined learning goals have been saved and are ready for the next steps in backward design."
+    >
 
       <div className="saved-goals">
         <h3>Saved Goals for your {courseType} on {courseSubject}:</h3>
@@ -621,13 +624,14 @@ function App() {
           Start Over
         </button>
       </div>
-    </div>
+    </StepContainer>
   )
 
   const renderAssessments = () => (
-    <div className="step-container">
-      <h2>Design Assessment Strategies</h2>
-      <p>Now let's develop assessment strategies for each of your learning goals. The AI will suggest multiple assessment options for each goal.</p>
+    <StepContainer 
+      title="Design Assessment Strategies"
+      description="Now let's develop assessment strategies for each of your learning goals. The AI will suggest multiple assessment options for each goal."
+    >
 
       <div className="saved-goals">
         <h3>Your Learning Goals:</h3>
@@ -657,13 +661,14 @@ function App() {
       {isRefining && (
         <LoadingIndicator message={loadingMessage} progress={progress} />
       )}
-    </div>
+    </StepContainer>
   )
 
   const renderAssessmentReview = () => (
-    <div className="step-container">
-      <h2>Review Assessment Strategies</h2>
-      <p>Here are the AI-generated assessment strategies for each of your learning goals:</p>
+    <StepContainer 
+      title="Review Assessment Strategies"
+      description="Here are the AI-generated assessment strategies for each of your learning goals:"
+    >
 
       {refinedAssessments.map((assessment, index) => {
         const correspondingGoal = approvedGoals.find(goal => goal.id === assessment.goalId)
@@ -717,13 +722,14 @@ function App() {
           </button>
         </div>
       </div>
-    </div>
+    </StepContainer>
   )
 
   const renderAssessmentSaved = () => (
-    <div className="step-container">
-      <h2>✅ Assessment Strategies Saved!</h2>
-      <p>Your assessment strategies have been saved and are ready for the next phase of backward design.</p>
+    <StepContainer 
+      title="✅ Assessment Strategies Saved!"
+      description="Your assessment strategies have been saved and are ready for the next phase of backward design."
+    >
 
       {approvedAssessments.map((assessment, index) => {
         const correspondingGoal = approvedGoals.find(goal => goal.id === assessment.goalId)
@@ -779,13 +785,14 @@ function App() {
       {isRefining && (
         <LoadingIndicator message={loadingMessage} progress={progress} />
       )}
-    </div>
+    </StepContainer>
   )
 
   const renderObjectivesReview = () => (
-    <div className="step-container">
-      <h2>Review Learning Objectives</h2>
-      <p>Here are the AI-generated learning objectives aligned with your goals and assessments using Bloom's Taxonomy:</p>
+    <StepContainer 
+      title="Review Learning Objectives"
+      description="Here are the AI-generated learning objectives aligned with your goals and assessments using Bloom's Taxonomy:"
+    >
 
       {approvedGoals.map((goal, goalIndex) => {
         const goalObjectives = refinedObjectives.filter(obj => obj.goalId === goal.id)
@@ -841,13 +848,14 @@ function App() {
           </button>
         </div>
       </div>
-    </div>
+    </StepContainer>
   )
 
   const renderObjectivesSaved = () => (
-    <div className="step-container">
-      <h2>🎯 Complete Backward Design Framework!</h2>
-      <p>Congratulations! You have successfully completed the backward design process with aligned goals, assessments, and learning objectives.</p>
+    <StepContainer 
+      title="🎯 Complete Backward Design Framework!" 
+      description="Congratulations! You have successfully completed the backward design process with aligned goals, assessments, and learning objectives."
+    >
 
       {approvedGoals.map((goal, goalIndex) => {
         const goalObjectives = approvedObjectives.filter(obj => obj.goalId === goal.id)
@@ -903,7 +911,7 @@ function App() {
           Create New Framework
         </button>
       </div>
-    </div>
+    </StepContainer>
   )
 
   return (
@@ -935,13 +943,14 @@ function App() {
         {currentStep === 'assessment-review' && renderAssessmentReview()}
         {currentStep === 'assessment-saved' && renderAssessmentSaved()}
         {currentStep === 'learning-objectives' && (
-          <div className="step-container">
-            <h2>Generating Learning Objectives...</h2>
-            <p>Please wait while we create learning objectives aligned with your goals and assessments using Bloom's Taxonomy...</p>
+          <StepContainer 
+            title="Generating Learning Objectives..." 
+            description="Please wait while we create learning objectives aligned with your goals and assessments using Bloom's Taxonomy..."
+          >
             {isRefining && (
               <LoadingIndicator message={loadingMessage} progress={progress} />
             )}
-          </div>
+          </StepContainer>
         )}
         {currentStep === 'objectives-review' && renderObjectivesReview()}
         {currentStep === 'objectives-saved' && renderObjectivesSaved()}
