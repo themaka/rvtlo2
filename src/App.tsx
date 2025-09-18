@@ -22,6 +22,7 @@ import {
   type CourseContext
 } from './services/aiService'
 import { LoadingIndicator, HelpPanel, AppHeader, ProgressIndicator, StepContainer, ButtonGroup } from './components'
+import DebugEnvVars from './components/DebugEnvVars'
 import { useUIState, useNavigation, useCourseSetup, useGoalsManagement, useAssessments, useObjectives } from './context/AppContext'
 import './App.css'
 
@@ -907,6 +908,7 @@ function App() {
 
   return (
     <div className="app-container">
+      <DebugEnvVars />
       <header>
         <AppHeader 
           showHelp={showHelp}
