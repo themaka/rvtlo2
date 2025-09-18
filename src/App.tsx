@@ -24,7 +24,7 @@ import {
   generateLearningObjectives as generateLearningObjectivesService,
   type CourseContext
 } from './services/aiService'
-import { LoadingIndicator, HelpPanel } from './components'
+import { LoadingIndicator, HelpPanel, AppHeader } from './components'
 import './App.css'
 
 function App() {
@@ -909,20 +909,10 @@ function App() {
   return (
     <div className="app-container">
       <header>
-        <div className="header-content">
-          <div className="header-left">
-            <h1>Course Goal Builder</h1>
-          </div>
-          <div className="header-right">
-            <button 
-              className="help-button"
-              onClick={() => setShowHelp(!showHelp)}
-              aria-label="Toggle help"
-            >
-              {showHelp ? '✕ Close Help' : '? Help'}
-            </button>
-          </div>
-        </div>
+        <AppHeader 
+          showHelp={showHelp}
+          onToggleHelp={() => setShowHelp(!showHelp)}
+        />
         <div className="progress-indicator">
           <span 
             className={getStepStatusCheck('intro')}
