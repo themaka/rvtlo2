@@ -98,6 +98,85 @@ export const useAppContext = (): AppContextType => {
   return context
 }
 
+// Specialized hooks for different state domains
+export const useNavigation = () => {
+  const { state, actions } = useAppContext();
+  return {
+    currentStep: state.currentStep,
+    setCurrentStep: actions.setCurrentStep,
+  };
+};
+
+export const useCourseSetup = () => {
+  const { state, actions } = useAppContext();
+  return {
+    courseType: state.courseType,
+    courseSubject: state.courseSubject,
+    targetAudience: state.targetAudience,
+    instructionDuration: state.instructionDuration,
+    isSubjectConfirmed: state.isSubjectConfirmed,
+    isSetupComplete: state.isSetupComplete,
+    setCourseType: actions.setCourseType,
+    setCourseSubject: actions.setCourseSubject,
+    setTargetAudience: actions.setTargetAudience,
+    setInstructionDuration: actions.setInstructionDuration,
+    setIsSubjectConfirmed: actions.setIsSubjectConfirmed,
+    setIsSetupComplete: actions.setIsSetupComplete,
+  };
+};
+
+export const useGoalsManagement = () => {
+  const { state, actions } = useAppContext();
+  return {
+    goals: state.goals,
+    currentGoal: state.currentGoal,
+    refinedGoals: state.refinedGoals,
+    approvedGoals: state.approvedGoals,
+    setGoals: actions.setGoals,
+    setCurrentGoal: actions.setCurrentGoal,
+    setRefinedGoals: actions.setRefinedGoals,
+    setApprovedGoals: actions.setApprovedGoals,
+  };
+};
+
+export const useAssessments = () => {
+  const { state, actions } = useAppContext();
+  return {
+    refinedAssessments: state.refinedAssessments,
+    approvedAssessments: state.approvedAssessments,
+    setRefinedAssessments: actions.setRefinedAssessments,
+    setApprovedAssessments: actions.setApprovedAssessments,
+  };
+};
+
+export const useObjectives = () => {
+  const { state, actions } = useAppContext();
+  return {
+    refinedObjectives: state.refinedObjectives,
+    approvedObjectives: state.approvedObjectives,
+    setRefinedObjectives: actions.setRefinedObjectives,
+    setApprovedObjectives: actions.setApprovedObjectives,
+  };
+};
+
+export const useUIState = () => {
+  const { state, actions } = useAppContext();
+  return {
+    isRefining: state.isRefining,
+    loadingMessage: state.loadingMessage,
+    progress: state.progress,
+    error: state.error,
+    inputErrors: state.inputErrors,
+    showHelp: state.showHelp,
+    setIsRefining: actions.setIsRefining,
+    setLoadingMessage: actions.setLoadingMessage,
+    setProgress: actions.setProgress,
+    setError: actions.setError,
+    setInputErrors: actions.setInputErrors,
+    setShowHelp: actions.setShowHelp,
+  };
+};
+
 // Provider component interface
 export interface AppProviderProps {
   children: ReactNode

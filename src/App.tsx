@@ -25,14 +25,14 @@ import {
   type CourseContext
 } from './services/aiService'
 import { LoadingIndicator, HelpPanel, AppHeader, ProgressIndicator, StepContainer, ButtonGroup } from './components'
-import { useAppContext } from './context/AppContext'
+import { useUIState, useNavigation } from './context/AppContext'
 import './App.css'
 
 function App() {
-  // Get context state and actions
-  const { state, actions } = useAppContext()
+  // Get UI state and navigation from context
+  const { showHelp, setShowHelp } = useUIState()
+  const { currentStep, setCurrentStep } = useNavigation()
   
-  const [currentStep, setCurrentStep] = useState<Step>('intro')
   const [courseType, setCourseType] = useState<'course' | 'workshop' | null>(null)
   const [courseSubject, setCourseSubject] = useState('')
   const [targetAudience, setTargetAudience] = useState('')
@@ -52,9 +52,7 @@ function App() {
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState('')
   const [inputErrors, setInputErrors] = useState<Record<string, string>>({})
-  // showHelp now comes from context
-  const showHelp = state.showHelp
-  const setShowHelp = actions.setShowHelp
+  // showHelp now comes from context via useUIState hook
 
   const addGoal = () => {
     return validateAndAddGoal(currentGoal, goals, {
@@ -156,7 +154,7 @@ function App() {
         setRefinedObjectives
       }
     )
-  }, [approvedGoals, approvedAssessments, courseType, courseSubject, targetAudience, instructionDuration])
+  }, [approvedGoals, approvedAssessments, courseType, courseSubject, targetAudience, instructionDuration, setCurrentStep])
 
   // Trigger learning objectives generation when step changes
   useEffect(() => {
