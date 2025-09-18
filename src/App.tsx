@@ -1,8 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useEffect, useCallback } from 'react'
 import type { 
-  Goal, 
-  Assessment, 
-  LearningObjective, 
   Step
 } from './types'
 import { 
@@ -25,34 +22,24 @@ import {
   type CourseContext
 } from './services/aiService'
 import { LoadingIndicator, HelpPanel, AppHeader, ProgressIndicator, StepContainer, ButtonGroup } from './components'
-import { useUIState, useNavigation } from './context/AppContext'
+import { useUIState, useNavigation, useCourseSetup, useGoalsManagement, useAssessments, useObjectives } from './context/AppContext'
 import './App.css'
 
 function App() {
-  // Get UI state and navigation from context
-  const { showHelp, setShowHelp } = useUIState()
+  // Get state from context hooks
+  const { showHelp, setShowHelp, isRefining, setIsRefining, loadingMessage, setLoadingMessage, progress, setProgress, error, setError, inputErrors, setInputErrors } = useUIState()
   const { currentStep, setCurrentStep } = useNavigation()
-  
-  const [courseType, setCourseType] = useState<'course' | 'workshop' | null>(null)
-  const [courseSubject, setCourseSubject] = useState('')
-  const [targetAudience, setTargetAudience] = useState('')
-  const [instructionDuration, setInstructionDuration] = useState('')
-  const [isSubjectConfirmed, setIsSubjectConfirmed] = useState(false)
-  const [isSetupComplete, setIsSetupComplete] = useState(false)
-  const [goals, setGoals] = useState<Goal[]>([])
-  const [currentGoal, setCurrentGoal] = useState('')
-  const [refinedGoals, setRefinedGoals] = useState<Goal[]>([])
-  const [approvedGoals, setApprovedGoals] = useState<Goal[]>([])
-  const [refinedAssessments, setRefinedAssessments] = useState<Assessment[]>([])
-  const [approvedAssessments, setApprovedAssessments] = useState<Assessment[]>([])
-  const [refinedObjectives, setRefinedObjectives] = useState<LearningObjective[]>([])
-  const [approvedObjectives, setApprovedObjectives] = useState<LearningObjective[]>([])
-  const [isRefining, setIsRefining] = useState(false)
-  const [loadingMessage, setLoadingMessage] = useState('')
-  const [progress, setProgress] = useState(0)
-  const [error, setError] = useState('')
-  const [inputErrors, setInputErrors] = useState<Record<string, string>>({})
-  // showHelp now comes from context via useUIState hook
+  const { 
+    courseType, setCourseType,
+    courseSubject, setCourseSubject, 
+    targetAudience, setTargetAudience,
+    instructionDuration, setInstructionDuration,
+    isSubjectConfirmed, setIsSubjectConfirmed,
+    isSetupComplete, setIsSetupComplete
+  } = useCourseSetup()
+  const { goals, setGoals, currentGoal, setCurrentGoal, refinedGoals, setRefinedGoals, approvedGoals, setApprovedGoals } = useGoalsManagement()
+  const { refinedAssessments, setRefinedAssessments, approvedAssessments, setApprovedAssessments } = useAssessments()
+  const { refinedObjectives, setRefinedObjectives, approvedObjectives, setApprovedObjectives } = useObjectives()
 
   const addGoal = () => {
     return validateAndAddGoal(currentGoal, goals, {
@@ -154,7 +141,7 @@ function App() {
         setRefinedObjectives
       }
     )
-  }, [approvedGoals, approvedAssessments, courseType, courseSubject, targetAudience, instructionDuration, setCurrentStep])
+  }, [approvedGoals, approvedAssessments, courseType, courseSubject, targetAudience, instructionDuration, setCurrentStep, setError, setIsRefining, setLoadingMessage, setProgress, setRefinedObjectives])
 
   // Trigger learning objectives generation when step changes
   useEffect(() => {
