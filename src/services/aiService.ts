@@ -1,18 +1,24 @@
-import Anthropic from '@anthropic-ai/sdk'
+// AI Service - Now uses secure Netlify Functions instead of direct API calls
 import type { Goal, Assessment, LearningObjective } from '../types'
 
-// Debug environment variable availability
-console.log('Environment check:', {
-  hasEnvVar: !!import.meta.env.VITE_ANTHROPIC_API_KEY,
-  envVarLength: import.meta.env.VITE_ANTHROPIC_API_KEY?.length || 0,
-  envVarPrefix: import.meta.env.VITE_ANTHROPIC_API_KEY?.substring(0, 10) || 'undefined',
-  allEnvVars: Object.keys(import.meta.env).filter(key => key.startsWith('VITE_'))
-})
+// Helper function to call our secure Netlify function
+async function callAIFunction(prompt: string, type: string): Promise<string> {
+  const response = await fetch('/.netlify/functions/ai-request', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ prompt, type })
+  })
 
-const anthropic = new Anthropic({
-  apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
-  dangerouslyAllowBrowser: true
-})
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+    throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
+  }
+
+  const data = await response.json()
+  return data.response
+}
 
 export interface AIServiceCallbacks {
   setIsRefining: (refining: boolean) => void
@@ -80,21 +86,14 @@ REFINED GOAL 3: [Your refined version of the third goal]
 
 Make each refined goal clear, actionable, and focused on student outcomes specific to ${context.courseSubject}, while maintaining flexibility in how the goal can be achieved.`
 
-    const response = await anthropic.messages.create({
-      model: 'claude-3-7-sonnet-20250219',
-      max_tokens: 1500,
-      messages: [{ role: 'user', content: prompt }]
-    })
+    const aiResponse = await callAIFunction(prompt, 'refine-goals')
 
     callbacks.setLoadingMessage('Processing AI response...')
     callbacks.setProgress(80)
 
-    const aiResponse = response.content[0].type === 'text' ? response.content[0].text : ''
-    console.log('AI Response:', aiResponse) // Debug logging
-
     // Parse AI response and create refined goals
     const refinedGoalsList: Goal[] = []
-    const lines = aiResponse.split('\n').filter(line => line.trim())
+    const lines = aiResponse.split('\n').filter((line: string) => line.trim())
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim()
@@ -242,23 +241,18 @@ ASSESSMENT FOR GOAL 3: [Provide 2-3 specific assessment methods for goal 3, sepa
 
 Make each assessment suggestion concrete, practical, and directly aligned with measuring the specific goal for ${context.courseSubject}.`
 
-    const response = await anthropic.messages.create({
-      model: 'claude-3-7-sonnet-20250219',
-      max_tokens: 2000,
-      messages: [{ role: 'user', content: prompt }]
-    })
+    const aiResponse = await callAIFunction(prompt, 'generate-assessments')
 
     callbacks.setLoadingMessage('Processing assessment recommendations...')
     callbacks.setProgress(70)
 
-    console.log('API Response received:', response)
-    const aiResponse = response.content[0].type === 'text' ? response.content[0].text : ''
+    console.log('AI Response received:', aiResponse)
     console.log('AI Assessment Response:', aiResponse)
     console.log('AI Response length:', aiResponse.length)
 
     // Parse AI response and create assessment suggestions
     const assessmentsList: Assessment[] = []
-    const lines = aiResponse.split('\n').filter(line => line.trim())
+    const lines = aiResponse.split('\n').filter((line: string) => line.trim())
     console.log('Filtered lines:', lines)
 
     let currentGoalIndex = -1
@@ -315,7 +309,7 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
       const goalMatches = aiResponse.match(/(\d+\.\s*[^1-9]+?)(?=\d+\.|$)/gs)
       if (goalMatches && goalMatches.length > 0) {
         console.log('Found goal-based matches:', goalMatches)
-        goalMatches.forEach((match, index) => {
+        goalMatches.forEach((match: any, index: number) => {
           if (index < approvedGoals.length) {
             const cleanText = match.replace(/^\d+\.\s*/, '').trim()
             if (cleanText.length > 10) {
@@ -541,22 +535,17 @@ OBJECTIVES FOR GOAL 2:
 
 Continue for each goal. Ensure objectives progress logically through Bloom's levels when appropriate for the ${context.courseSubject} content.`
 
-    const response = await anthropic.messages.create({
-      model: 'claude-3-7-sonnet-20250219',
-      max_tokens: 2500,
-      messages: [{ role: 'user', content: prompt }]
-    })
+    const aiResponse = await callAIFunction(prompt, 'generate-objectives')
 
     callbacks.setLoadingMessage('Processing learning objectives...')
     callbacks.setProgress(80)
 
-    console.log('Objectives API Response received:', response)
-    const aiResponse = response.content[0].type === 'text' ? response.content[0].text : ''
+    console.log('Objectives AI Response received:', aiResponse)
     console.log('AI Objectives Response:', aiResponse)
 
     // Parse AI response and create learning objectives
     const objectivesList: LearningObjective[] = []
-    const lines = aiResponse.split('\n').filter(line => line.trim())
+    const lines = aiResponse.split('\n').filter((line: string) => line.trim())
     
     let currentGoalIndex = -1
     let objectiveId = Date.now()
