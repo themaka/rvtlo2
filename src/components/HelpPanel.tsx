@@ -49,6 +49,33 @@ export function HelpPanel({ currentStep, isVisible, onClose }: HelpPanelProps) {
           "The AI will suggest multiple options - you'll review them next."
         ]
       },
+      saved: {
+        title: "Goals Complete - What's Next?",
+        content: [
+          "Your refined goals are now saved and ready for the next phase of backward design.",
+          "Next, you'll create assessment strategies that directly measure these goals.",
+          "If you want to make changes, use the 'Start Over' button to return to the beginning.",
+          "Assessment design ensures your students can demonstrate goal achievement."
+        ]
+      },
+      'assessment-review': {
+        title: "Reviewing Assessment Strategies",
+        content: [
+          "Review each assessment strategy to ensure it aligns with your learning goals.",
+          "Look for clear connections between what students will do and what you want them to achieve.",
+          "Consider the balance of formative (ongoing) and summative (final) assessments.",
+          "If strategies don't match your vision, click 'Revise Assessments' to generate new ones."
+        ]
+      },
+      'assessment-saved': {
+        title: "Assessments Complete - Final Phase",
+        content: [
+          "Your assessment strategies are saved and aligned with your learning goals.",
+          "Next, you'll create specific learning objectives using Bloom's Taxonomy.",
+          "These objectives will bridge your goals and assessments with daily activities.",
+          "Use 'Start Over' if you need to make changes to goals or assessments."
+        ]
+      },
       'learning-objectives': {
         title: "Learning Objectives & Bloom's Taxonomy",
         content: [
@@ -56,6 +83,24 @@ export function HelpPanel({ currentStep, isVisible, onClose }: HelpPanelProps) {
           "They use action verbs from Bloom's Taxonomy (Remember, Understand, Apply, Analyze, Evaluate, Create).",
           "Each objective should be directly assessable using your chosen assessment methods.",
           "Objectives provide the detailed roadmap for daily lesson planning."
+        ]
+      },
+      'objectives-review': {
+        title: "Reviewing Learning Objectives",
+        content: [
+          "Check that objectives are specific, measurable, and use appropriate Bloom's Taxonomy verbs.",
+          "Ensure each objective connects clearly to both your goals and assessment strategies.",
+          "Look for a good mix of cognitive levels (Remember through Create) appropriate for your audience.",
+          "Click 'Revise Objectives' if you need the AI to generate different or additional objectives."
+        ]
+      },
+      'objectives-saved': {
+        title: "Backward Design Complete!",
+        content: [
+          "Congratulations! You've completed a full backward design framework.",
+          "Your goals, assessments, and objectives are now aligned and ready for implementation.",
+          "Use this framework to guide your lesson planning and curriculum development.",
+          "Click 'Create New Framework' to start over for a different course or workshop."
         ]
       }
     }
