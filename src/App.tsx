@@ -24,7 +24,7 @@ import {
   generateLearningObjectives as generateLearningObjectivesService,
   type CourseContext
 } from './services/aiService'
-import { LoadingIndicator, HelpPanel, AppHeader } from './components'
+import { LoadingIndicator, HelpPanel, AppHeader, ProgressIndicator } from './components'
 import './App.css'
 
 function App() {
@@ -913,78 +913,11 @@ function App() {
           showHelp={showHelp}
           onToggleHelp={() => setShowHelp(!showHelp)}
         />
-        <div className="progress-indicator">
-          <span 
-            className={getStepStatusCheck('intro')}
-            onClick={() => navigateToStep('intro')}
-            style={{ cursor: canNavigateToStepCheck('intro') ? 'pointer' : 'default' }}
-          >
-            1. Setup
-          </span>
-          <span 
-            className={getStepStatusCheck('goals')}
-            onClick={() => navigateToStep('goals')}
-            style={{ cursor: canNavigateToStepCheck('goals') ? 'pointer' : 'default' }}
-          >
-            2. Goals
-          </span>
-          <span 
-            className={getStepStatusCheck('approve')}
-            onClick={() => navigateToStep('approve')}
-            style={{ cursor: canNavigateToStepCheck('approve') ? 'pointer' : 'default' }}
-          >
-            3. Review
-          </span>
-          <span 
-            className={getStepStatusCheck('saved')}
-            onClick={() => navigateToStep('saved')}
-            style={{ cursor: canNavigateToStepCheck('saved') ? 'pointer' : 'default' }}
-          >
-            4. Goals Complete
-          </span>
-          <span 
-            className={getStepStatusCheck('assessments')}
-            onClick={() => navigateToStep('assessments')}
-            style={{ cursor: canNavigateToStepCheck('assessments') ? 'pointer' : 'default' }}
-          >
-            5. Assessments
-          </span>
-          <span 
-            className={getStepStatusCheck('assessment-review')}
-            onClick={() => navigateToStep('assessment-review')}
-            style={{ cursor: canNavigateToStepCheck('assessment-review') ? 'pointer' : 'default' }}
-          >
-            6. Review
-          </span>
-          <span 
-            className={getStepStatusCheck('assessment-saved')}
-            onClick={() => navigateToStep('assessment-saved')}
-            style={{ cursor: canNavigateToStepCheck('assessment-saved') ? 'pointer' : 'default' }}
-          >
-            7. Assessment Complete
-          </span>
-          <span 
-            className={getStepStatusCheck('learning-objectives')}
-            onClick={() => navigateToStep('learning-objectives')}
-            style={{ cursor: canNavigateToStepCheck('learning-objectives') ? 'pointer' : 'default' }}
-          >
-            8. Learning Objectives
-          </span>
-          <span 
-            className={getStepStatusCheck('objectives-review')}
-            onClick={() => navigateToStep('objectives-review')}
-            style={{ cursor: canNavigateToStepCheck('objectives-review') ? 'pointer' : 'default' }}
-          >
-            9. Review
-          </span>
-          <span 
-            className={getStepStatusCheck('objectives-saved')}
-            onClick={() => navigateToStep('objectives-saved')}
-            style={{ cursor: canNavigateToStepCheck('objectives-saved') ? 'pointer' : 'default' }}
-          >
-            10. Complete
-          </span>
-        </div>
+        <ProgressIndicator 
+          onNavigateToStep={navigateToStep}
+          canNavigateToStep={canNavigateToStepCheck}
+          getStepStatus={getStepStatusCheck}
+        />
       </header>
 
       <main>
