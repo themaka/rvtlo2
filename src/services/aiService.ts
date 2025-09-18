@@ -1,6 +1,14 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { Goal, Assessment, LearningObjective } from '../types'
 
+// Debug environment variable availability
+console.log('Environment check:', {
+  hasEnvVar: !!import.meta.env.VITE_ANTHROPIC_API_KEY,
+  envVarLength: import.meta.env.VITE_ANTHROPIC_API_KEY?.length || 0,
+  envVarPrefix: import.meta.env.VITE_ANTHROPIC_API_KEY?.substring(0, 10) || 'undefined',
+  allEnvVars: Object.keys(import.meta.env).filter(key => key.startsWith('VITE_'))
+})
+
 const anthropic = new Anthropic({
   apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
   dangerouslyAllowBrowser: true
@@ -119,8 +127,25 @@ Make each refined goal clear, actionable, and focused on student outcomes specif
     callbacks.setCurrentStep('approve')
   } catch (error) {
     console.error('Error refining goals:', error)
+    
+    // Check for specific API key issues
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    let userMessage = 'We encountered an issue while refining your goals. Don\'t worry - we\'ve kept your original goals and you can proceed with those or try again.'
+    
+    if (errorMessage.includes('401') || errorMessage.includes('unauthorized') || errorMessage.includes('authentication')) {
+      userMessage = 'API authentication failed. Please check that your API key is correctly configured in the environment variables.'
+      console.error('API Key Issue - Environment variable check:', {
+        hasEnvVar: !!import.meta.env.VITE_ANTHROPIC_API_KEY,
+        envVarLength: import.meta.env.VITE_ANTHROPIC_API_KEY?.length || 0
+      })
+    } else if (errorMessage.includes('403') || errorMessage.includes('forbidden')) {
+      userMessage = 'API access denied. Please check your API key permissions and billing status.'
+    } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+      userMessage = 'Network connection issue. Please check your internet connection and try again.'
+    }
+    
     callbacks.setLoadingMessage('Error occurred - using original goals')
-    callbacks.setError('We encountered an issue while refining your goals. Don\'t worry - we\'ve kept your original goals and you can proceed with those or try again.')
+    callbacks.setError(userMessage)
     // Fallback to original goals if AI fails
     callbacks.setRefinedGoals(goals.map(goal => ({ ...goal, isRefined: true })))
     callbacks.setCurrentStep('approve')
