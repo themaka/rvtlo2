@@ -25,9 +25,13 @@ import {
   type CourseContext
 } from './services/aiService'
 import { LoadingIndicator, HelpPanel, AppHeader, ProgressIndicator, StepContainer, ButtonGroup } from './components'
+import { useAppContext } from './context/AppContext'
 import './App.css'
 
 function App() {
+  // Get context state and actions
+  const { state, actions } = useAppContext()
+  
   const [currentStep, setCurrentStep] = useState<Step>('intro')
   const [courseType, setCourseType] = useState<'course' | 'workshop' | null>(null)
   const [courseSubject, setCourseSubject] = useState('')
@@ -48,7 +52,9 @@ function App() {
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState('')
   const [inputErrors, setInputErrors] = useState<Record<string, string>>({})
-  const [showHelp, setShowHelp] = useState(false)
+  // showHelp now comes from context
+  const showHelp = state.showHelp
+  const setShowHelp = actions.setShowHelp
 
   const addGoal = () => {
     return validateAndAddGoal(currentGoal, goals, {
