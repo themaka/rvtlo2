@@ -24,7 +24,7 @@ import {
   generateLearningObjectives as generateLearningObjectivesService,
   type CourseContext
 } from './services/aiService'
-import { LoadingIndicator, HelpPanel, AppHeader, ProgressIndicator, StepContainer } from './components'
+import { LoadingIndicator, HelpPanel, AppHeader, ProgressIndicator, StepContainer, ButtonGroup } from './components'
 import './App.css'
 
 function App() {
@@ -260,7 +260,7 @@ function App() {
       {!courseType ? (
         <div className="selection-container">
           <h3>What type of instruction are you planning?</h3>
-          <div className="button-group">
+          <ButtonGroup>
             <button
               className="option-button"
               onClick={() => setCourseType('course')}
@@ -273,7 +273,7 @@ function App() {
             >
               Workshop
             </button>
-          </div>
+          </ButtonGroup>
         </div>
       ) : !isSubjectConfirmed ? (
         <div className="selection-container">
@@ -314,7 +314,7 @@ function App() {
             </div>
           )}
 
-          <div className="button-group">
+          <ButtonGroup>
             <button
               className="secondary-button"
               onClick={() => setCourseType(null)}
@@ -328,7 +328,7 @@ function App() {
             >
               Continue
             </button>
-          </div>
+          </ButtonGroup>
         </div>
       ) : !isSetupComplete ? (
         <div className="selection-container">
@@ -403,7 +403,7 @@ function App() {
             </div>
           )}
 
-          <div className="button-group">
+          <ButtonGroup>
             <button
               className="secondary-button"
               onClick={() => setIsSubjectConfirmed(false)}
@@ -417,7 +417,7 @@ function App() {
             >
               Continue to Goals
             </button>
-          </div>
+          </ButtonGroup>
         </div>
       ) : (
         <div className="confirmation-container">
@@ -426,7 +426,7 @@ function App() {
           <p><strong>Subject:</strong> {courseSubject}</p>
           <p><strong>Target Audience:</strong> {targetAudience}</p>
           <p><strong>Duration:</strong> {instructionDuration}</p>
-          <div className="button-group">
+          <ButtonGroup>
             <button
               className="secondary-button"
               onClick={() => setIsSetupComplete(false)}
@@ -439,7 +439,7 @@ function App() {
             >
               Start Defining Goals
             </button>
-          </div>
+          </ButtonGroup>
         </div>
       )}
     </StepContainer>
@@ -517,7 +517,7 @@ function App() {
         </div>
       )}
 
-      <div className="button-group">
+      <ButtonGroup>
         <button
           className="secondary-button"
           onClick={() => setCurrentStep('intro')}
@@ -531,7 +531,7 @@ function App() {
         >
           {isRefining ? 'Refining Goals...' : 'Refine Goals with AI'}
         </button>
-      </div>
+      </ButtonGroup>
 
       {isRefining && (
         <LoadingIndicator message={loadingMessage} progress={progress} />
@@ -573,7 +573,7 @@ function App() {
 
       <div className="confirmation-question">
         <h3>Are you happy with these refined goals?</h3>
-        <div className="button-group">
+        <ButtonGroup>
           <button
             className="primary-button"
             onClick={approveGoals}
@@ -586,7 +586,7 @@ function App() {
           >
             No, Let Me Revise Them
           </button>
-        </div>
+        </ButtonGroup>
       </div>
     </StepContainer>
   )
@@ -610,7 +610,7 @@ function App() {
         <p><em>Next: Assessment strategies will be developed based on these goals...</em></p>
       </div>
 
-      <div className="button-group">
+      <ButtonGroup>
         <button
           className="primary-button"
           onClick={() => setCurrentStep('assessments')}
@@ -623,7 +623,7 @@ function App() {
         >
           Start Over
         </button>
-      </div>
+      </ButtonGroup>
     </StepContainer>
   )
 
@@ -642,7 +642,7 @@ function App() {
         ))}
       </div>
 
-      <div className="button-group">
+      <ButtonGroup>
         <button
           className="secondary-button"
           onClick={() => setCurrentStep('saved')}
@@ -656,7 +656,7 @@ function App() {
         >
           {isRefining ? 'Generating Assessment Strategies...' : 'Generate Assessment Strategies'}
         </button>
-      </div>
+      </ButtonGroup>
 
       {isRefining && (
         <LoadingIndicator message={loadingMessage} progress={progress} />
@@ -707,7 +707,7 @@ function App() {
 
       <div className="confirmation-question">
         <h3>Are you satisfied with these assessment strategies?</h3>
-        <div className="button-group">
+        <ButtonGroup>
           <button
             className="primary-button"
             onClick={approveAssessments}
@@ -720,7 +720,7 @@ function App() {
           >
             Revise Assessments
           </button>
-        </div>
+        </ButtonGroup>
       </div>
     </StepContainer>
   )
@@ -766,7 +766,7 @@ function App() {
         <p><em>Next: Learning objectives will be developed to support these goals and assessments...</em></p>
       </div>
 
-      <div className="button-group">
+      <ButtonGroup>
         <button
           className="primary-button"
           onClick={generateLearningObjectives}
@@ -780,7 +780,7 @@ function App() {
         >
           Start Over
         </button>
-      </div>
+      </ButtonGroup>
 
       {isRefining && (
         <LoadingIndicator message={loadingMessage} progress={progress} />
@@ -833,7 +833,7 @@ function App() {
 
       <div className="confirmation-question">
         <h3>Are these learning objectives appropriate and measurable?</h3>
-        <div className="button-group">
+        <ButtonGroup>
           <button
             className="primary-button"
             onClick={approveLearningObjectives}
@@ -846,7 +846,7 @@ function App() {
           >
             Revise Objectives
           </button>
-        </div>
+        </ButtonGroup>
       </div>
     </StepContainer>
   )
@@ -903,14 +903,14 @@ function App() {
         <p>✅ <strong>{approvedObjectives.length}</strong> learning objectives aligned</p>
       </div>
 
-      <div className="button-group">
+      <ButtonGroup>
         <button
           className="secondary-button"
           onClick={resetApp}
         >
           Create New Framework
         </button>
-      </div>
+      </ButtonGroup>
     </StepContainer>
   )
 
