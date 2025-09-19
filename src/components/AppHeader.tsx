@@ -1,9 +1,11 @@
+import { memo } from 'react'
+
 interface AppHeaderProps {
   showHelp: boolean
   onToggleHelp: () => void
 }
 
-export function AppHeader({ showHelp, onToggleHelp }: AppHeaderProps) {
+export const AppHeader = memo(function AppHeader({ showHelp, onToggleHelp }: AppHeaderProps) {
   return (
     <div className="header-content">
       <div className="header-left">
@@ -20,4 +22,4 @@ export function AppHeader({ showHelp, onToggleHelp }: AppHeaderProps) {
       </div>
     </div>
   )
-}
+})

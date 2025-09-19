@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useMemo } from 'react'
 import type { 
   Step
 } from './types'
@@ -113,10 +113,10 @@ function App() {
     })
   }
 
-  const approveAssessments = () => {
+  const approveAssessments = useCallback(() => {
     setApprovedAssessments(refinedAssessments)
     setCurrentStep('assessment-saved')
-  }
+  }, [refinedAssessments, setApprovedAssessments, setCurrentStep])
 
   const generateLearningObjectives = useCallback(async () => {
     if (!courseType || approvedGoals.length === 0 || approvedAssessments.length === 0) return
@@ -150,13 +150,13 @@ function App() {
     }
   }, [currentStep, generateLearningObjectives])
 
-  const approveLearningObjectives = () => {
+  const approveLearningObjectives = useCallback(() => {
     setApprovedObjectives(refinedObjectives)
     setCurrentStep('objectives-saved')
-  }
+  }, [refinedObjectives, setApprovedObjectives, setCurrentStep])
 
   // Helper function to parse and format assessment strategies
-  const parseAssessmentStrategies = (description: string) => {
+  const parseAssessmentStrategies = useCallback((description: string) => {
     // First, try simple semicolon or bullet point splitting
     let strategies = description
       .split(/[;•]/) // Split on semicolons or bullet points
@@ -185,15 +185,15 @@ function App() {
       }
       return cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
     })
-  }
+  }, [])
 
-  const approveGoals = () => {
+  const approveGoals = useCallback(() => {
     setApprovedGoals(refinedGoals)
     setCurrentStep('saved')
-  }
+  }, [refinedGoals, setApprovedGoals, setCurrentStep])
 
   // Create navigation state helper
-  const getNavigationState = () => createNavigationState(
+  const navigationState = useMemo(() => createNavigationState(
     currentStep,
     courseType,
     isSubjectConfirmed,
@@ -204,22 +204,20 @@ function App() {
     approvedAssessments,
     refinedObjectives,
     approvedObjectives
-  )
+  ), [currentStep, courseType, isSubjectConfirmed, isSetupComplete, goals, approvedGoals, refinedAssessments, approvedAssessments, refinedObjectives, approvedObjectives])
 
   // Navigation wrapper functions that use the utility functions
-  const navigateToStep = (targetStep: Step) => {
-    const state = getNavigationState()
-    navigateToStepUtil(targetStep, state, { setCurrentStep, setError })
-  }
+  const navigateToStep = useCallback((targetStep: Step) => {
+    navigateToStepUtil(targetStep, navigationState, { setCurrentStep, setError })
+  }, [navigationState, setCurrentStep, setError])
 
-  const canNavigateToStepCheck = (targetStep: Step) => {
-    const state = getNavigationState()
-    return canNavigateToStep(targetStep, state)
-  }
+  const canNavigateToStepCheck = useCallback((targetStep: Step) => {
+    return canNavigateToStep(targetStep, navigationState)
+  }, [navigationState])
 
-  const getStepStatusCheck = (step: string) => {
+  const getStepStatusCheck = useCallback((step: string) => {
     return getStepStatus(step, currentStep)
-  }
+  }, [currentStep])
 
   const resetApp = () => {
     const actions: NavigationActions = {

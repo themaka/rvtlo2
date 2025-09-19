@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useMemo } from 'react'
 import type { ReactNode } from 'react'
 import type { 
   Step, 
@@ -217,8 +217,8 @@ export function AppProvider({ children }: AppProviderProps) {
   const [inputErrors, setInputErrors] = useState<Record<string, string>>({})
   const [showHelp, setShowHelp] = useState(false)
 
-  // Create state object
-  const state: AppState = {
+  // Create state object with memoization
+  const state: AppState = useMemo(() => ({
     // Course Setup State
     courseType,
     courseSubject,
@@ -251,10 +251,10 @@ export function AppProvider({ children }: AppProviderProps) {
     error,
     inputErrors,
     showHelp
-  }
+  }), [courseType, courseSubject, targetAudience, instructionDuration, isSubjectConfirmed, isSetupComplete, currentStep, goals, currentGoal, refinedGoals, approvedGoals, refinedAssessments, approvedAssessments, refinedObjectives, approvedObjectives, isRefining, loadingMessage, progress, error, inputErrors, showHelp])
 
-  // Create actions object
-  const actions: AppActions = {
+  // Create actions object with memoization
+  const actions: AppActions = useMemo(() => ({
     // Course Setup Actions
     setCourseType,
     setCourseSubject,
@@ -287,13 +287,13 @@ export function AppProvider({ children }: AppProviderProps) {
     setError,
     setInputErrors,
     setShowHelp
-  }
+  }), [setCourseType, setCourseSubject, setTargetAudience, setInstructionDuration, setIsSubjectConfirmed, setIsSetupComplete, setCurrentStep, setGoals, setCurrentGoal, setRefinedGoals, setApprovedGoals, setRefinedAssessments, setApprovedAssessments, setRefinedObjectives, setApprovedObjectives, setIsRefining, setLoadingMessage, setProgress, setError, setInputErrors, setShowHelp])
 
-  // Create context value
-  const contextValue: AppContextType = {
+  // Create context value with memoization
+  const contextValue: AppContextType = useMemo(() => ({
     state,
     actions
-  }
+  }), [state, actions])
 
   return (
     <AppContext.Provider value={contextValue}>

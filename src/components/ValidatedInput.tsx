@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, memo, useEffect } from 'react'
 import { FieldError } from './ErrorMessage'
 import { getFieldValidationState } from '../utils/validation'
 
@@ -22,7 +22,7 @@ interface ValidatedInputProps {
 /**
  * Enhanced input component with real-time validation and user feedback
  */
-export function ValidatedInput({
+export const ValidatedInput = memo(function ValidatedInput({
   value,
   onChange,
   onValidation,
@@ -41,6 +41,15 @@ export function ValidatedInput({
   const [error, setError] = useState<string>('')
   const [touched, setTouched] = useState(false)
   const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(null)
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout)
+      }
+    }
+  }, [debounceTimeout])
 
   const validationState = getFieldValidationState(value, minLength, maxLength)
 
@@ -167,6 +176,6 @@ export function ValidatedInput({
       </div>
     </div>
   )
-}
+})
 
 export default ValidatedInput

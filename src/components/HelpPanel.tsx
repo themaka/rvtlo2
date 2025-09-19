@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import type { Step } from '../types'
 
 interface HelpPanelProps {
@@ -11,7 +12,7 @@ interface HelpContent {
   content: string[]
 }
 
-export function HelpPanel({ currentStep, isVisible, onClose }: HelpPanelProps) {
+export const HelpPanel = memo(function HelpPanel({ currentStep, isVisible, onClose }: HelpPanelProps) {
   const getHelpContent = (step: Step): HelpContent | null => {
     const helpContent = {
       intro: {
@@ -132,4 +133,4 @@ export function HelpPanel({ currentStep, isVisible, onClose }: HelpPanelProps) {
       </div>
     </div>
   )
-}
+})

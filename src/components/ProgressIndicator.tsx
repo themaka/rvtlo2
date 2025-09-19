@@ -1,4 +1,5 @@
 import type { Step } from '../types'
+import { memo } from 'react'
 
 interface ProgressIndicatorProps {
   onNavigateToStep: (step: Step) => void
@@ -11,7 +12,7 @@ interface StepInfo {
   label: string
 }
 
-export function ProgressIndicator({ 
+export const ProgressIndicator = memo(function ProgressIndicator({ 
   onNavigateToStep, 
   canNavigateToStep, 
   getStepStatus 
@@ -43,4 +44,4 @@ export function ProgressIndicator({
       ))}
     </div>
   )
-}
+})

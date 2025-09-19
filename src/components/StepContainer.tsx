@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { memo } from 'react'
 
 interface StepContainerProps {
   title: string
@@ -6,7 +7,7 @@ interface StepContainerProps {
   children: ReactNode
 }
 
-export function StepContainer({ title, description, children }: StepContainerProps) {
+export const StepContainer = memo(function StepContainer({ title, description, children }: StepContainerProps) {
   return (
     <div className="step-container">
       <h2>{title}</h2>
@@ -14,4 +15,4 @@ export function StepContainer({ title, description, children }: StepContainerPro
       {children}
     </div>
   )
-}
+})

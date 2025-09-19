@@ -1,3 +1,4 @@
+import { memo, useEffect } from 'react'
 import { ErrorSeverity, ErrorCategory, formatErrorForUser, type AppError } from '../utils/errorHandling'
 
 interface ErrorMessageProps {
@@ -11,7 +12,7 @@ interface ErrorMessageProps {
 /**
  * Standardized error message component with consistent styling and behavior
  */
-export function ErrorMessage({ 
+export const ErrorMessage = memo(function ErrorMessage({ 
   error, 
   onRetry, 
   onDismiss, 
@@ -110,7 +111,7 @@ export function ErrorMessage({
       </div>
     </div>
   )
-}
+})
 
 /**
  * Inline field error component for form validation
@@ -121,7 +122,7 @@ interface FieldErrorProps {
   className?: string
 }
 
-export function FieldError({ error, fieldName, className = '' }: FieldErrorProps) {
+export const FieldError = memo(function FieldError({ error, fieldName, className = '' }: FieldErrorProps) {
   if (!error) {
     return null
   }
@@ -135,7 +136,7 @@ export function FieldError({ error, fieldName, className = '' }: FieldErrorProps
       </span>
     </div>
   )
-}
+})
 
 /**
  * Toast-style notification for temporary errors
@@ -146,11 +147,16 @@ interface ErrorToastProps {
   autoHideDuration?: number
 }
 
-export function ErrorToast({ error, onDismiss, autoHideDuration = 5000 }: ErrorToastProps) {
-  // Auto-hide after specified duration
-  setTimeout(() => {
-    onDismiss()
-  }, autoHideDuration)
+export const ErrorToast = memo(function ErrorToast({ error, onDismiss, autoHideDuration = 5000 }: ErrorToastProps) {
+  // Auto-hide after specified duration with cleanup
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onDismiss()
+    }, autoHideDuration)
+
+    // Cleanup timer on unmount or dependency change
+    return () => clearTimeout(timer)
+  }, [onDismiss, autoHideDuration])
 
   const isStringError = typeof error === 'string'
   const severity = isStringError ? ErrorSeverity.MEDIUM : error.severity
@@ -175,7 +181,7 @@ export function ErrorToast({ error, onDismiss, autoHideDuration = 5000 }: ErrorT
       </button>
     </div>
   )
-}
+})
 
 /**
  * Error banner for top-level application errors
@@ -186,7 +192,7 @@ interface ErrorBannerProps {
   onDismiss?: () => void
 }
 
-export function ErrorBanner({ error, onRetry, onDismiss }: ErrorBannerProps) {
+export const ErrorBanner = memo(function ErrorBanner({ error, onRetry, onDismiss }: ErrorBannerProps) {
   const formattedError = formatErrorForUser(error)
   
   return (
@@ -211,7 +217,7 @@ export function ErrorBanner({ error, onRetry, onDismiss }: ErrorBannerProps) {
       </div>
     </div>
   )
-}
+})
 
 /**
  * Get appropriate icon for error category

@@ -1,14 +1,14 @@
-import React from 'react'
+import { memo } from 'react'
 
 interface LoadingIndicatorProps {
   message: string
   progress: number
 }
 
-export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({ 
+export const LoadingIndicator = memo<LoadingIndicatorProps>(function LoadingIndicator({ 
   message, 
   progress 
-}) => {
+}) {
   return (
     <div className="loading-indicator">
       <div className="loading-header">
@@ -20,4 +20,4 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
       </div>
     </div>
   )
-}
+})
