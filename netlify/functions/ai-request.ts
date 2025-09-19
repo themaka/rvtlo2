@@ -72,15 +72,49 @@ export const handler: Handler = async (event: HandlerEvent) => {
   } catch (error) {
     console.error('AI API Error:', error)
     
+    // Determine error type and provide appropriate response
+    let statusCode = 500
+    let errorMessage = 'Failed to process AI request'
+    let errorDetails = 'Unknown error'
+
+    if (error instanceof Error) {
+      errorDetails = error.message
+      
+      // Handle specific Anthropic API errors
+      if (error.message.includes('401') || error.message.includes('authentication')) {
+        statusCode = 401
+        errorMessage = 'API authentication failed'
+        errorDetails = 'Invalid API key or authentication issue'
+      } else if (error.message.includes('403') || error.message.includes('forbidden')) {
+        statusCode = 403
+        errorMessage = 'API access forbidden'
+        errorDetails = 'API key lacks required permissions or billing issue'
+      } else if (error.message.includes('429') || error.message.includes('rate limit')) {
+        statusCode = 429
+        errorMessage = 'Rate limit exceeded'
+        errorDetails = 'Too many requests to the AI service'
+      } else if (error.message.includes('timeout')) {
+        statusCode = 504
+        errorMessage = 'Request timeout'
+        errorDetails = 'AI service request timed out'
+      } else if (error.message.includes('network') || error.message.includes('ENOTFOUND')) {
+        statusCode = 502
+        errorMessage = 'Network error'
+        errorDetails = 'Unable to connect to AI service'
+      }
+    }
+    
     return {
-      statusCode: 500,
+      statusCode,
       headers: {
         'Content-Type': 'application/json',
         ...corsHeaders
       },
       body: JSON.stringify({ 
-        error: 'Failed to process AI request',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        error: errorMessage,
+        details: errorDetails,
+        timestamp: new Date().toISOString(),
+        retryable: statusCode >= 500 || statusCode === 429
       })
     }
   }

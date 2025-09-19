@@ -21,7 +21,7 @@ import {
   generateLearningObjectives as generateLearningObjectivesService,
   type CourseContext
 } from './services/aiService'
-import { LoadingIndicator, HelpPanel, AppHeader, ProgressIndicator, StepContainer, ButtonGroup } from './components'
+import { LoadingIndicator, HelpPanel, AppHeader, ProgressIndicator, StepContainer, ButtonGroup, ErrorBoundary } from './components'
 import { useUIState, useNavigation, useCourseSetup, useGoalsManagement, useAssessments, useObjectives } from './context/AppContext'
 import './App.css'
 
@@ -920,31 +920,41 @@ function App() {
       </header>
 
       <main>
-        <HelpPanel 
-          currentStep={currentStep}
-          isVisible={showHelp}
-          onClose={() => setShowHelp(false)}
-        />
-        
-        {currentStep === 'intro' && renderIntro()}
-        {currentStep === 'goals' && renderGoals()}
-        {currentStep === 'approve' && renderApprove()}
-        {currentStep === 'saved' && renderSaved()}
-        {currentStep === 'assessments' && renderAssessments()}
-        {currentStep === 'assessment-review' && renderAssessmentReview()}
-        {currentStep === 'assessment-saved' && renderAssessmentSaved()}
-        {currentStep === 'learning-objectives' && (
-          <StepContainer 
-            title="Generating Learning Objectives..." 
-            description="Please wait while we create learning objectives aligned with your goals and assessments using Bloom's Taxonomy..."
-          >
-            {isRefining && (
-              <LoadingIndicator message={loadingMessage} progress={progress} />
-            )}
-          </StepContainer>
-        )}
-        {currentStep === 'objectives-review' && renderObjectivesReview()}
-        {currentStep === 'objectives-saved' && renderObjectivesSaved()}
+        <ErrorBoundary onError={(error, errorInfo, errorId) => {
+          // Log error for debugging
+          console.error('App Error Boundary caught error:', {
+            error,
+            errorInfo,
+            errorId,
+            timestamp: new Date().toISOString()
+          })
+        }}>
+          <HelpPanel 
+            currentStep={currentStep}
+            isVisible={showHelp}
+            onClose={() => setShowHelp(false)}
+          />
+          
+          {currentStep === 'intro' && renderIntro()}
+          {currentStep === 'goals' && renderGoals()}
+          {currentStep === 'approve' && renderApprove()}
+          {currentStep === 'saved' && renderSaved()}
+          {currentStep === 'assessments' && renderAssessments()}
+          {currentStep === 'assessment-review' && renderAssessmentReview()}
+          {currentStep === 'assessment-saved' && renderAssessmentSaved()}
+          {currentStep === 'learning-objectives' && (
+            <StepContainer 
+              title="Generating Learning Objectives..." 
+              description="Please wait while we create learning objectives aligned with your goals and assessments using Bloom's Taxonomy..."
+            >
+              {isRefining && (
+                <LoadingIndicator message={loadingMessage} progress={progress} />
+              )}
+            </StepContainer>
+          )}
+          {currentStep === 'objectives-review' && renderObjectivesReview()}
+          {currentStep === 'objectives-saved' && renderObjectivesSaved()}
+        </ErrorBoundary>
       </main>
     </div>
   )

@@ -1,8 +1,10 @@
 import type { Goal } from '../types'
+import { createAppError, ErrorCategory, ErrorSeverity, type AppError } from './errorHandling'
 
 export interface ValidationResult {
   isValid: boolean
   error?: string
+  appError?: AppError
 }
 
 export interface ValidationCallbacks {
@@ -16,21 +18,90 @@ export interface ValidationCallbacks {
 }
 
 /**
+ * Enhanced validation with AppError integration
+ */
+function createValidationError(message: string, field: string): AppError {
+  return createAppError(
+    `Validation failed for ${field}`,
+    { field, userInput: true },
+    {
+      category: ErrorCategory.VALIDATION,
+      severity: ErrorSeverity.LOW,
+      userMessage: message,
+      recoverable: true,
+      retryable: false
+    }
+  )
+}
+
+/**
+ * Enhanced validation with immediate feedback helpers
+ */
+export const getFieldValidationState = (value: string, minLength: number, maxLength: number) => {
+  const length = value.length
+  
+  return {
+    isEmpty: length === 0,
+    tooShort: length > 0 && length < minLength,
+    tooLong: length > maxLength,
+    isValid: length >= minLength && length <= maxLength,
+    isWarning: length > maxLength * 0.8 && length <= maxLength,
+    progress: Math.min(100, Math.max(0, (length / maxLength) * 100))
+  }
+}
+
+/**
+ * Debounced validation helper for real-time feedback
+ */
+export const createDebouncedValidator = (
+  validator: (value: string) => ValidationResult,
+  delay: number = 300
+) => {
+  let timeoutId: NodeJS.Timeout | null = null
+  
+  return (value: string, callback: (result: ValidationResult) => void) => {
+    if (timeoutId) {
+      clearTimeout(timeoutId)
+    }
+    
+    timeoutId = setTimeout(() => {
+      const result = validator(value)
+      callback(result)
+    }, delay)
+  }
+}
+
+/**
  * Validates course subject input
  */
 export const validateCourseSubject = (courseSubject: string): ValidationResult => {
   const trimmedSubject = courseSubject.trim()
   
   if (!trimmedSubject) {
-    return { isValid: false, error: 'Please enter a course subject.' }
+    const error = 'Please enter a course subject.'
+    return { 
+      isValid: false, 
+      error,
+      appError: createValidationError(error, 'course subject')
+    }
   }
   
   if (trimmedSubject.length < 3) {
-    return { isValid: false, error: 'Course subject should be at least 3 characters long.' }
+    const error = 'Course subject should be at least 3 characters long.'
+    return { 
+      isValid: false, 
+      error,
+      appError: createValidationError(error, 'course subject')
+    }
   }
   
   if (trimmedSubject.length > 100) {
-    return { isValid: false, error: 'Course subject should be under 100 characters.' }
+    const error = 'Course subject should be under 100 characters.'
+    return { 
+      isValid: false, 
+      error,
+      appError: createValidationError(error, 'course subject')
+    }
   }
   
   return { isValid: true }

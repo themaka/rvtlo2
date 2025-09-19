@@ -1,23 +1,132 @@
 // AI Service - Now uses secure Netlify Functions instead of direct API calls
-import type { Goal, Assessment, LearningObjective } from '../types'
+import type { Goal, Assessment, LearningObjective, Step } from '../types'
+import { createAppError, handleAsyncError, ErrorCategory, ErrorSeverity, type AppError } from '../utils/errorHandling'
 
-// Helper function to call our secure Netlify function
+// Helper function to call our secure Netlify function with enhanced error handling
 async function callAIFunction(prompt: string, type: string): Promise<string> {
-  const response = await fetch('/.netlify/functions/ai-request', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ prompt, type })
-  })
+  const result = await handleAsyncError(async () => {
+    const response = await fetch('/.netlify/functions/ai-request', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ prompt, type })
+    })
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-    throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown server error' }))
+      
+      // Create more specific error based on status code
+      let appError: AppError
+      if (response.status === 401) {
+        appError = createAppError(
+          'Authentication failed',
+          { status: response.status, type },
+          {
+            category: ErrorCategory.PERMISSION,
+            severity: ErrorSeverity.HIGH,
+            userMessage: 'API authentication failed. Please check that your API key is correctly configured.',
+            retryable: false
+          }
+        )
+      } else if (response.status === 403) {
+        appError = createAppError(
+          'Access forbidden',
+          { status: response.status, type },
+          {
+            category: ErrorCategory.PERMISSION,
+            severity: ErrorSeverity.HIGH,
+            userMessage: 'API access denied. Please check your API key permissions and billing status.',
+            retryable: false
+          }
+        )
+      } else if (response.status >= 500) {
+        appError = createAppError(
+          'Server error',
+          { status: response.status, type },
+          {
+            category: ErrorCategory.API,
+            severity: ErrorSeverity.HIGH,
+            userMessage: 'Our AI service is experiencing issues. Please try again in a few minutes.',
+            retryable: true
+          }
+        )
+      } else if (response.status === 429) {
+        appError = createAppError(
+          'Rate limit exceeded',
+          { status: response.status, type },
+          {
+            category: ErrorCategory.API,
+            severity: ErrorSeverity.MEDIUM,
+            userMessage: 'Too many requests. Please wait a moment before trying again.',
+            retryable: true
+          }
+        )
+      } else {
+        appError = createAppError(
+          errorData.error || `HTTP ${response.status}: ${response.statusText}`,
+          { status: response.status, type },
+          {
+            category: ErrorCategory.API,
+            severity: ErrorSeverity.MEDIUM,
+            userMessage: 'We couldn\'t process your AI request right now. Please try again.',
+            retryable: true
+          }
+        )
+      }
+      
+      throw appError
+    }
+
+    const data = await response.json()
+    if (!data.response) {
+      throw createAppError(
+        'Invalid AI response format',
+        { type, responseData: data },
+        {
+          category: ErrorCategory.DATA,
+          severity: ErrorSeverity.MEDIUM,
+          userMessage: 'Received an invalid response from the AI service. Please try again.',
+          retryable: true
+        }
+      )
+    }
+    
+    return data.response
+  }, { operation: 'AI API call', type })
+
+  if (!result.success) {
+    throw result.error
   }
+  
+  return result.data
+}
 
-  const data = await response.json()
-  return data.response
+// Enhanced retry logic for AI operations
+async function retryOperation<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 2,
+  delayMs: number = 1000
+): Promise<T> {
+  let lastError: AppError | null = null
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation()
+    } catch (error) {
+      lastError = error instanceof Error ? createAppError(error) : error as AppError
+      
+      // Don't retry if error is not retryable or we've exhausted attempts
+      if (!lastError.retryable || attempt === maxRetries) {
+        throw lastError
+      }
+      
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, delayMs * (attempt + 1)))
+    }
+  }
+  
+  throw lastError!
 }
 
 export interface AIServiceCallbacks {
@@ -25,7 +134,7 @@ export interface AIServiceCallbacks {
   setLoadingMessage: (message: string) => void
   setProgress: (progress: number) => void
   setError: (error: string) => void
-  setCurrentStep: (step: any) => void // More flexible type for now
+  setCurrentStep: (step: Step) => void
 }
 
 export interface CourseContext {
@@ -86,7 +195,8 @@ REFINED GOAL 3: [Your refined version of the third goal]
 
 Make each refined goal clear, actionable, and focused on student outcomes specific to ${context.courseSubject}, while maintaining flexibility in how the goal can be achieved.`
 
-    const aiResponse = await callAIFunction(prompt, 'refine-goals')
+    // Use retry logic for AI calls
+    const aiResponse = await retryOperation(() => callAIFunction(prompt, 'refine-goals'))
 
     callbacks.setLoadingMessage('Processing AI response...')
     callbacks.setProgress(80)
@@ -127,24 +237,36 @@ Make each refined goal clear, actionable, and focused on student outcomes specif
   } catch (error) {
     console.error('Error refining goals:', error)
     
-    // Check for specific API key issues
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    let userMessage = 'We encountered an issue while refining your goals. Don\'t worry - we\'ve kept your original goals and you can proceed with those or try again.'
-    
-    if (errorMessage.includes('401') || errorMessage.includes('unauthorized') || errorMessage.includes('authentication')) {
-      userMessage = 'API authentication failed. Please check that your API key is correctly configured in the environment variables.'
-      console.error('API Key Issue - Environment variable check:', {
-        hasEnvVar: !!import.meta.env.VITE_ANTHROPIC_API_KEY,
-        envVarLength: import.meta.env.VITE_ANTHROPIC_API_KEY?.length || 0
+    // Handle AppError objects with better user messaging
+    if (error && typeof error === 'object' && 'userMessage' in error) {
+      const appError = error as AppError
+      callbacks.setError(appError.userMessage)
+      
+      // Log structured error information
+      console.error('AI Service Error Details:', {
+        id: appError.id,
+        category: appError.category,
+        severity: appError.severity,
+        retryable: appError.retryable,
+        context: appError.context
       })
-    } else if (errorMessage.includes('403') || errorMessage.includes('forbidden')) {
-      userMessage = 'API access denied. Please check your API key permissions and billing status.'
-    } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-      userMessage = 'Network connection issue. Please check your internet connection and try again.'
+    } else {
+      // Fallback for unexpected error types
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      let userMessage = 'We encountered an issue while refining your goals. Don\'t worry - we\'ve kept your original goals and you can proceed with those or try again.'
+      
+      if (errorMessage.includes('401') || errorMessage.includes('unauthorized') || errorMessage.includes('authentication')) {
+        userMessage = 'API authentication failed. Please check that your API key is correctly configured in the environment variables.'
+      } else if (errorMessage.includes('403') || errorMessage.includes('forbidden')) {
+        userMessage = 'API access denied. Please check your API key permissions and billing status.'
+      } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        userMessage = 'Network connection issue. Please check your internet connection and try again.'
+      }
+      
+      callbacks.setError(userMessage)
     }
     
     callbacks.setLoadingMessage('Error occurred - using original goals')
-    callbacks.setError(userMessage)
     // Fallback to original goals if AI fails
     callbacks.setRefinedGoals(goals.map(goal => ({ ...goal, isRefined: true })))
     callbacks.setCurrentStep('approve')
@@ -309,7 +431,7 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
       const goalMatches = aiResponse.match(/(\d+\.\s*[^1-9]+?)(?=\d+\.|$)/gs)
       if (goalMatches && goalMatches.length > 0) {
         console.log('Found goal-based matches:', goalMatches)
-        goalMatches.forEach((match: any, index: number) => {
+        goalMatches.forEach((match: string, index: number) => {
           if (index < approvedGoals.length) {
             const cleanText = match.replace(/^\d+\.\s*/, '').trim()
             if (cleanText.length > 10) {
