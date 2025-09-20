@@ -6,10 +6,11 @@ A React + TypeScript application for creating learning objectives using backward
 
 - [Project Overview](#project-overview)
 - [File Structure](#file-structure)
-- [Refactoring Progress](#refactoring-progress)
 - [Technology Stack](#technology-stack)
 - [Development Setup](#development-setup)
+- [Build & Deployment Configuration](#build--deployment-configuration)
 - [Architecture](#architecture)
+- [Next Steps & Future Enhancements](#next-steps--future-enhancements)
 - [Original Vite Configuration](#original-vite-configuration)
 
 ## Project Overview
@@ -30,14 +31,14 @@ The Course Goal Builder is an educational design tool that helps instructors cre
 
 ```
 src/
-├── 📄 App.tsx (~800 lines) - Main React component with Context integration
+├── 📄 App.tsx - Main React component with Context integration
 ├── 📄 App.css - Main application styling
 ├── 📄 index.css - Global styles  
-├── 📄 main.tsx (10 lines) - React entry point
-├── 📄 vite-env.d.ts (1 line) - Vite type definitions
+├── 📄 main.tsx - React entry point
+├── 📄 vite-env.d.ts - Vite type definitions
 ├── 📁 assets/
 │   └── react.svg - React logo
-├── 📁 components/ ✅ **Phase 5 Complete**
+├── 📁 components/
 │   ├── 📄 index.ts - Component exports
 │   ├── 📄 AppHeader.tsx - Application header with navigation
 │   ├── 📄 ButtonGroup.tsx - Reusable button groups
@@ -50,23 +51,23 @@ src/
 │   ├── 📄 StepContainer.tsx - Step wrapper components
 │   ├── 📄 ValidatedInput.tsx - Form input with validation
 │   └── 📄 withErrorBoundary.tsx - HOC for error handling
-├── 📁 context/ ✅ **Phase 6 Complete**
+├── 📁 context/
 │   └── 📄 AppContext.tsx - React Context with state management
-├── 📁 types/ ✅ **Phase 1 Complete**
-│   └── 📄 index.ts (93 lines) - TypeScript interfaces & types
-├── 📁 utils/ ✅ **Phases 2, 4 & 7 Complete** 
-│   ├── 📄 validation.ts (224 lines) - Input validation logic
-│   ├── 📄 navigation.ts (196 lines) - Workflow navigation utilities
+├── 📁 types/
+│   └── 📄 index.ts - TypeScript interfaces & types
+├── 📁 utils/
+│   ├── 📄 validation.ts - Input validation logic
+│   ├── 📄 navigation.ts - Workflow navigation utilities
 │   └── 📄 errorHandling.ts - Error handling utilities
-└── 📁 services/ ✅ **Phases 3 & 8 Complete**
-    ├── 📄 aiService.ts (631 lines) - AI API calls & prompt templates
+└── 📁 services/
+    ├── 📄 aiService.ts - AI API calls & prompt templates
     ├── 📄 aiService-canvas.ts - Canvas-based AI interactions
     └── 📄 lazyAIService.ts - Lazy-loaded AI service utilities
 ```
 
-### Module Breakdown
+### Key Components & Modules
 
-#### **components/ (12 components)**
+#### **Components (12 reusable components)**
 - **AppHeader.tsx** - Application header with navigation and branding
 - **ButtonGroup.tsx** - Reusable button group components with consistent styling
 - **ErrorBoundary.tsx** - React error boundary for graceful error handling
@@ -79,101 +80,20 @@ src/
 - **ValidatedInput.tsx** - Form input components with real-time validation
 - **withErrorBoundary.tsx** - Higher-order component for error boundary wrapping
 
-#### **context/AppContext.tsx** (~300 lines)
-- **React Context Provider** - Centralized state management with Context API
-- **15+ State Variables** - Goals, assessments, learning objectives, workflow state
-- **Memoized Actions** - Performance-optimized state update functions
-- **Type-Safe Context** - Full TypeScript integration with proper typing
+#### **State Management**
+- **AppContext.tsx** - React Context provider with centralized state management for goals, assessments, learning objectives, and workflow state
 
-#### **types/index.ts** (93 lines)
-- `Goal`, `Assessment`, `LearningObjective` interfaces
-- `Step` union type for workflow states  
-- `CourseContext` for AI service context
-- Centralized TypeScript type definitions
+#### **Core Services**
+- **aiService.ts** - Claude API integration for goal refinement, assessment generation, and learning objectives
+- **lazyAIService.ts** - Lazy-loaded AI service utilities for performance optimization
 
-#### **utils/validation.ts** (224 lines)
-- `validateAndConfirmSubject()` - Course subject validation
-- `validateAndCompleteSetup()` - Target audience & duration validation  
-- `validateAndAddGoal()` - Goal input validation
-- Pure functions with consistent error handling
+#### **Utilities**
+- **validation.ts** - Form validation functions for course setup and goal input
+- **navigation.ts** - Workflow navigation logic and step management
+- **errorHandling.ts** - Error classification and user-friendly error messaging
 
-#### **utils/navigation.ts** (196 lines)
-- `getStepStatus()` - Progress indicator logic
-- `canNavigateToStep()` - Navigation permission rules
-- `navigateToStep()` - Safe step transitions
-- `resetApplication()` - Complete state reset
-- Workflow management utilities
-
-#### **utils/errorHandling.ts** (~100 lines)
-- **Error Classification** - Development vs production error handling
-- **User-Friendly Messages** - Error message translation and formatting
-- **Recovery Strategies** - Graceful failure and recovery mechanisms
-
-#### **services/aiService.ts** (631 lines)
-- `refineGoalsWithAI()` - Goal refinement with Claude API
-- `generateAssessments()` - Assessment strategy generation
-- `generateLearningObjectives()` - Bloom's taxonomy objectives
-- Centralized AI API integration
-
-#### **services/lazyAIService.ts** (~50 lines)
-- **Dynamic AI Loading** - Lazy-loaded AI service for performance
-- **Preload Capabilities** - Optimized loading for heavy AI operations
-- **Error Boundaries** - Safe loading with fallback handling
-
-#### **App.tsx** (~800 lines - REDUCED from ~1,700 lines)
-- Main React component with Context integration
-- Performance-optimized with useCallback and useMemo
-- Memoized expensive operations and state management
-- Clean separation of concerns with extracted components
-
-## Refactoring Progress
-
-**✅ ALL PHASES COMPLETE (100% Complete):**
-
-- **Phase 1**: Extract type definitions ✅
-- **Phase 2**: Create validation utilities ✅
-- **Phase 3**: Extract AI service functions ✅
-- **Phase 4**: Create navigation utilities ✅
-- **Phase 5**: Extract UI components (render methods → reusable components) ✅
-- **Phase 6**: State management layer (Context API/provider patterns) ✅
-- **Phase 7**: Error handling & utilities (error boundaries, user-friendly errors) ✅
-- **Phase 8**: Performance optimization (memoization, lazy loading, memory management) ✅
-
-### Phase-by-Phase Accomplishments
-
-**Phase 5 - UI Component Extraction:**
-- 12 reusable components extracted from App.tsx
-- Consistent prop interfaces and TypeScript integration
-- Error boundaries and loading states for robust UX
-- Component index file for clean imports
-
-**Phase 6 - State Management:**
-- React Context API implementation with centralized state
-- 15+ state variables properly managed with reducers
-- Type-safe context with proper TypeScript integration
-- Memoized providers to prevent unnecessary re-renders
-
-**Phase 7 - Error Handling:**
-- Error boundary wrapper components
-- User-friendly error message system
-- Development vs production error handling
-- Graceful failure recovery mechanisms
-
-**Phase 8 - Performance Optimization:**
-- React.memo() for 8+ components to prevent unnecessary re-renders
-- useCallback/useMemo for expensive operations and object creation
-- Code splitting with React.lazy and Suspense for improved loading
-- Bundle optimization with Vite/Rollup configuration
-- Memory leak prevention with proper useEffect cleanup
-
-### Current Impact Summary
-
-- **~900+ lines** extracted from App.tsx into focused, reusable modules
-- **12 reusable components** with consistent interfaces and error handling
-- **React Context** for centralized state management (replacing prop drilling)
-- **Performance optimized** with memoization and code splitting strategies
-- **Production-ready** error handling and recovery mechanisms
-- **Modern architecture** following React 18 best practices and patterns
+#### **Type Definitions**
+- **types/index.ts** - TypeScript interfaces for Goal, Assessment, LearningObjective, and workflow state
 
 ## Technology Stack
 
@@ -293,15 +213,15 @@ This architecture promotes:
 
 ## Next Steps & Future Enhancements
 
-With the 8-phase refactoring complete, the application now has a solid foundation for future development:
+The application now has a solid foundation for future development. Potential areas for enhancement include:
 
-### **Potential Phase 9: Testing Framework**
+### **Testing Framework**
 - Unit tests for utility functions and components
 - Integration tests for user workflows
 - End-to-end testing with Playwright or Cypress
 - Component testing with React Testing Library
 
-### **Potential Phase 10: Advanced Features**
+### **Advanced Features**
 - Progressive Web App (PWA) capabilities
 - Offline support with service workers
 - Advanced accessibility (WCAG compliance)
