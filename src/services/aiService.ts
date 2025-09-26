@@ -180,6 +180,8 @@ ${goalsText}
 Please help me refine these goals to make them more specific, measurable, and aligned with effective ${context.courseType} design principles for the subject of ${context.courseSubject}.
 
 Important guidelines for refining:
+- Start each refined goal with action-focused language like "Students will be able to..." or "Learners will demonstrate..."
+- Do NOT start goals with the course subject name "${context.courseSubject}"
 - Be suggestive rather than prescriptive
 - Avoid dictating specific vocabulary terms or specific issues that must be addressed
 - Use flexible language like "some examples are...", "possibly including...", "such as...", or "which may include..."
@@ -201,16 +203,68 @@ Make each refined goal clear, actionable, and focused on student outcomes specif
     callbacks.setLoadingMessage('Processing AI response...')
     callbacks.setProgress(80)
 
+    // Enhanced logging for debugging
+    console.log('AI Response for goal refinement:', aiResponse)
+    console.log('Original goals:', goals.map(g => g.description))
+    console.log('Course subject:', context.courseSubject)
+
     // Parse AI response and create refined goals
     const refinedGoalsList: Goal[] = []
     const lines = aiResponse.split('\n').filter((line: string) => line.trim())
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim()
+      console.log(`Processing line ${i}: "${line}"`)
+      
       // Look for lines that start with "REFINED GOAL X:"
       const refinedGoalMatch = line.match(/^REFINED GOAL \d+:\s*(.+)$/i)
       if (refinedGoalMatch) {
-        const goalText = refinedGoalMatch[1].trim()
+        let goalText = refinedGoalMatch[1].trim()
+        console.log(`Matched refined goal: "${goalText}"`)
+        
+        // Check and filter out goals that inappropriately start with the subject
+        const subjectWords = context.courseSubject.toLowerCase().split(/\s+/)
+        const goalTextLower = goalText.toLowerCase()
+        
+        // Check if goal starts with the subject or major subject words
+        let startsWithSubject = false
+        if (subjectWords.length > 0) {
+          // Check if goal starts with the full subject
+          if (goalTextLower.startsWith(context.courseSubject.toLowerCase())) {
+            startsWithSubject = true
+          }
+          // Check if goal starts with the first significant word of the subject (length > 3)
+          else if (subjectWords[0].length > 3 && goalTextLower.startsWith(subjectWords[0])) {
+            startsWithSubject = true
+          }
+        }
+        
+        if (startsWithSubject) {
+          console.warn(`Warning: Fixing goal that starts with subject "${context.courseSubject}": ${goalText}`)
+          // Try to fix it by removing the subject prefix and adding proper learning outcome language
+          let fixedGoalText = goalText
+          
+          // Remove the subject from the beginning
+          if (goalTextLower.startsWith(context.courseSubject.toLowerCase())) {
+            fixedGoalText = goalText.substring(context.courseSubject.length).trim()
+          } else if (subjectWords[0].length > 3 && goalTextLower.startsWith(subjectWords[0])) {
+            fixedGoalText = goalText.substring(subjectWords[0].length).trim()
+          }
+          
+          // Clean up any remaining punctuation or conjunctions at the start
+          fixedGoalText = fixedGoalText.replace(/^[:\-,\s]+/, '').trim()
+          
+          // Add proper learning outcome language if it doesn't exist
+          if (!fixedGoalText.toLowerCase().startsWith('students will') && 
+              !fixedGoalText.toLowerCase().startsWith('learners will') && 
+              !fixedGoalText.toLowerCase().startsWith('participants will')) {
+            fixedGoalText = `Students will be able to ${fixedGoalText}`
+          }
+          
+          console.log(`Fixed goal text: ${fixedGoalText}`)
+          goalText = fixedGoalText
+        }
+        
         if (goalText) {
           refinedGoalsList.push({
             id: Date.now() + i,
@@ -224,10 +278,41 @@ Make each refined goal clear, actionable, and focused on student outcomes specif
     callbacks.setLoadingMessage('Finalizing refined goals...')
     callbacks.setProgress(100)
 
-    // If no goals were parsed, fall back to original goals
+    // If no goals were parsed, fall back to original goals (ensuring they don't start with subject)
     if (refinedGoalsList.length === 0) {
-      console.log('No refined goals parsed, using original goals')
-      callbacks.setRefinedGoals(goals.map(goal => ({ ...goal, isRefined: true })))
+      console.log('No refined goals parsed, using original goals with subject check')
+      const safeOriginalGoals = goals.map(goal => {
+        let description = goal.description
+        const subjectWords = context.courseSubject.toLowerCase().split(/\s+/)
+        const descriptionLower = description.toLowerCase()
+        
+        // Check if original goal starts with subject
+        if (subjectWords.length > 0 && 
+            (descriptionLower.startsWith(context.courseSubject.toLowerCase()) ||
+             (subjectWords[0].length > 3 && descriptionLower.startsWith(subjectWords[0])))) {
+          console.warn(`Warning: Original goal starts with subject, fixing: ${description}`)
+          
+          // Remove subject prefix
+          if (descriptionLower.startsWith(context.courseSubject.toLowerCase())) {
+            description = description.substring(context.courseSubject.length).trim()
+          } else if (subjectWords[0].length > 3 && descriptionLower.startsWith(subjectWords[0])) {
+            description = description.substring(subjectWords[0].length).trim()
+          }
+          
+          // Clean up and add proper language
+          description = description.replace(/^[:\-,\s]+/, '').trim()
+          if (!description.toLowerCase().startsWith('students will') && 
+              !description.toLowerCase().startsWith('learners will') && 
+              !description.toLowerCase().startsWith('participants will')) {
+            description = `Students will be able to ${description}`
+          }
+          
+          console.log(`Fixed original goal: ${description}`)
+        }
+        
+        return { ...goal, description, isRefined: true }
+      })
+      callbacks.setRefinedGoals(safeOriginalGoals)
     } else {
       console.log('Parsed refined goals:', refinedGoalsList)
       callbacks.setRefinedGoals(refinedGoalsList)

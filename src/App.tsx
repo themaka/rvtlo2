@@ -47,7 +47,7 @@ function App() {
       setError,
       setGoals,
       setCurrentGoal
-    })
+    }, courseSubject)
   }
 
   const validateAndConfirmSubjectHandler = () => {

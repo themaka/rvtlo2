@@ -154,7 +154,8 @@ export const validateInstructionDuration = (instructionDuration: string): Valida
  */
 export const validateGoal = (
   currentGoal: string,
-  existingGoals: Goal[]
+  existingGoals: Goal[],
+  courseSubject?: string
 ): ValidationResult => {
   const trimmedGoal = currentGoal.trim()
   
@@ -168,6 +169,11 @@ export const validateGoal = (
   
   if (trimmedGoal.length > 300) {
     return { isValid: false, error: 'Goals should be under 300 characters. Consider breaking into multiple goals.' }
+  }
+  
+  // Check if the goal appears to be just the course subject
+  if (courseSubject && courseSubject.trim().toLowerCase() === trimmedGoal.toLowerCase()) {
+    return { isValid: false, error: `Please enter a learning goal, not the course subject. Goals should describe what students will be able to do related to "${courseSubject}".` }
   }
   
   // Check for duplicate goals
@@ -264,13 +270,14 @@ export const validateAndAddGoal = (
   callbacks: ValidationCallbacks & {
     setGoals: (updater: (prev: Goal[]) => Goal[]) => void
     setCurrentGoal: (goal: string) => void
-  }
+  },
+  courseSubject?: string
 ) => {
   // Clear any previous errors
   callbacks.setInputErrors({})
   callbacks.setError('')
   
-  const validation = validateGoal(currentGoal, existingGoals)
+  const validation = validateGoal(currentGoal, existingGoals, courseSubject)
   
   if (!validation.isValid) {
     callbacks.setInputErrors({ goal: validation.error! })
