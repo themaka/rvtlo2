@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import type { 
   Step
 } from './types'
@@ -93,8 +93,8 @@ function App() {
     })
   }
 
-  const generateAssessments = async () => {
-    if (!courseType) return // Guard against null courseType
+  const generateAssessments = useCallback(async (goalsToUse = approvedGoals) => {
+    if (!courseType || goalsToUse.length === 0) return // Guard against null courseType and empty goals
     
     const context: CourseContext = {
       courseType,
@@ -103,7 +103,7 @@ function App() {
       instructionDuration
     }
 
-    await generateAssessmentsService(approvedGoals, context, {
+    await generateAssessmentsService(goalsToUse, context, {
       setIsRefining,
       setLoadingMessage,
       setProgress,
@@ -111,15 +111,10 @@ function App() {
       setCurrentStep,
       setRefinedAssessments
     })
-  }
+  }, [courseType, courseSubject, targetAudience, instructionDuration, approvedGoals, setCurrentStep, setError, setIsRefining, setLoadingMessage, setProgress, setRefinedAssessments])
 
-  const approveAssessments = useCallback(() => {
-    setApprovedAssessments(refinedAssessments)
-    setCurrentStep('assessment-saved')
-  }, [refinedAssessments, setApprovedAssessments, setCurrentStep])
-
-  const generateLearningObjectives = useCallback(async () => {
-    if (!courseType || approvedGoals.length === 0 || approvedAssessments.length === 0) return
+  const generateLearningObjectives = useCallback(async (goalsToUse = approvedGoals, assessmentsToUse = approvedAssessments) => {
+    if (!courseType || goalsToUse.length === 0 || assessmentsToUse.length === 0) return
 
     const context: CourseContext = {
       courseType,
@@ -129,8 +124,8 @@ function App() {
     }
 
     await generateLearningObjectivesService(
-      approvedGoals,
-      approvedAssessments,
+      goalsToUse,
+      assessmentsToUse,
       context,
       {
         setIsRefining,
@@ -143,16 +138,18 @@ function App() {
     )
   }, [approvedGoals, approvedAssessments, courseType, courseSubject, targetAudience, instructionDuration, setCurrentStep, setError, setIsRefining, setLoadingMessage, setProgress, setRefinedObjectives])
 
-  // Trigger learning objectives generation when step changes
-  useEffect(() => {
-    if (currentStep === 'learning-objectives') {
-      generateLearningObjectives()
-    }
-  }, [currentStep, generateLearningObjectives])
+  const approveAssessments = useCallback(async () => {
+    setApprovedAssessments(refinedAssessments)
+    // Automatically generate learning objectives instead of stopping at intermediate screen
+    // Pass current data directly to avoid state timing issues
+    await generateLearningObjectives(refinedGoals, refinedAssessments)
+  }, [refinedAssessments, setApprovedAssessments, generateLearningObjectives, refinedGoals])
+
+
 
   const approveLearningObjectives = useCallback(() => {
     setApprovedObjectives(refinedObjectives)
-    setCurrentStep('objectives-saved')
+    setCurrentStep('complete')
   }, [refinedObjectives, setApprovedObjectives, setCurrentStep])
 
   // Helper function to parse and format assessment strategies
@@ -187,10 +184,12 @@ function App() {
     })
   }, [])
 
-  const approveGoals = useCallback(() => {
+  const approveGoals = useCallback(async () => {
     setApprovedGoals(refinedGoals)
-    setCurrentStep('saved')
-  }, [refinedGoals, setApprovedGoals, setCurrentStep])
+    // Automatically generate assessments instead of stopping at intermediate screen
+    // Pass refinedGoals directly to avoid state timing issues
+    await generateAssessments(refinedGoals)
+  }, [refinedGoals, setApprovedGoals, generateAssessments])
 
   // Create navigation state helper
   const navigationState = useMemo(() => createNavigationState(
@@ -566,8 +565,9 @@ function App() {
           <button
             className="primary-button"
             onClick={approveGoals}
+            disabled={isRefining}
           >
-            Yes, Save These Goals
+            {isRefining ? 'SAVING AND GENERATING ASSESSMENTS...' : 'SAVE AND CONTINUE'}
           </button>
           <button
             className="secondary-button"
@@ -577,44 +577,14 @@ function App() {
           </button>
         </ButtonGroup>
       </div>
+
+      {isRefining && (
+        <LoadingIndicator message={loadingMessage} progress={progress} />
+      )}
     </StepContainer>
   )
 
-  const renderSaved = () => (
-    <StepContainer 
-      title="✅ Goals Saved Successfully!"
-      description="Your refined learning goals have been saved and are ready for the next steps in backward design."
-    >
 
-      <div className="saved-goals">
-        <h3>Saved Goals for your {courseType} on {courseSubject}:</h3>
-        {approvedGoals.map((goal, index) => (
-          <div key={goal.id} className="saved-goal-item">
-            <strong>Goal {index + 1}:</strong> <span>{goal.description || "Goal text missing"}</span>
-          </div>
-        ))}
-      </div>
-
-      <div className="next-steps">
-        <p><em>Next: Assessment strategies will be developed based on these goals...</em></p>
-      </div>
-
-      <ButtonGroup>
-        <button
-          className="primary-button"
-          onClick={() => setCurrentStep('assessments')}
-        >
-          Continue to Assessment Strategies
-        </button>
-        <button
-          className="secondary-button"
-          onClick={resetApp}
-        >
-          Start Over
-        </button>
-      </ButtonGroup>
-    </StepContainer>
-  )
 
   const renderAssessments = () => (
     <StepContainer 
@@ -634,13 +604,13 @@ function App() {
       <ButtonGroup>
         <button
           className="secondary-button"
-          onClick={() => setCurrentStep('saved')}
+          onClick={() => setCurrentStep('review-goals')}
         >
           Back to Goals
         </button>
         <button
           className="primary-button"
-          onClick={generateAssessments}
+          onClick={() => generateAssessments()}
           disabled={isRefining}
         >
           {isRefining ? 'Generating Assessment Strategies...' : 'Generate Assessment Strategies'}
@@ -700,8 +670,9 @@ function App() {
           <button
             className="primary-button"
             onClick={approveAssessments}
+            disabled={isRefining}
           >
-            Save Assessments
+            {isRefining ? 'SAVING AND GENERATING OBJECTIVES...' : 'SAVE AND CONTINUE'}
           </button>
           <button
             className="secondary-button"
@@ -711,71 +682,14 @@ function App() {
           </button>
         </ButtonGroup>
       </div>
-    </StepContainer>
-  )
-
-  const renderAssessmentSaved = () => (
-    <StepContainer 
-      title="✅ Assessment Strategies Saved!"
-      description="Your assessment strategies have been saved and are ready for the next phase of backward design."
-    >
-
-      {approvedAssessments.map((assessment, index) => {
-        const correspondingGoal = approvedGoals.find(goal => goal.id === assessment.goalId)
-        const strategies = parseAssessmentStrategies(assessment.description)
-        
-        return (
-          <div key={assessment.id} className="assessment-saved-section">
-            <div className="goal-header">
-              <h3>Goal {index + 1}</h3>
-              <p className="goal-text">{correspondingGoal?.description}</p>
-            </div>
-            
-            <div className="assessment-strategies">
-              <h4>Assessment Strategies:</h4>
-              {strategies.length > 1 ? (
-                <ul className="strategy-list">
-                  {strategies.map((strategy, strategyIndex) => (
-                    <li key={strategyIndex} className="strategy-item">
-                      {strategy}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="single-strategy">
-                  <p>{assessment.description}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )
-      })}
-
-      <div className="next-steps">
-        <p><em>Next: Learning objectives will be developed to support these goals and assessments...</em></p>
-      </div>
-
-      <ButtonGroup>
-        <button
-          className="primary-button"
-          onClick={generateLearningObjectives}
-          disabled={isRefining}
-        >
-          {isRefining ? 'Generating Learning Objectives...' : 'Continue to Learning Objectives'}
-        </button>
-        <button
-          className="secondary-button"
-          onClick={resetApp}
-        >
-          Start Over
-        </button>
-      </ButtonGroup>
 
       {isRefining && (
         <LoadingIndicator message={loadingMessage} progress={progress} />
       )}
     </StepContainer>
   )
+
+  
 
   const renderObjectivesReview = () => (
     <StepContainer 
@@ -826,17 +740,22 @@ function App() {
           <button
             className="primary-button"
             onClick={approveLearningObjectives}
+            disabled={isRefining}
           >
-            Save Learning Objectives
+            {isRefining ? 'SAVING AND COMPLETING...' : 'SAVE AND CONTINUE'}
           </button>
           <button
             className="secondary-button"
-            onClick={() => setCurrentStep('assessment-saved')}
+            onClick={() => setCurrentStep('review-assessments')}
           >
             Revise Objectives
           </button>
         </ButtonGroup>
       </div>
+
+      {isRefining && (
+        <LoadingIndicator message={loadingMessage} progress={progress} />
+      )}
     </StepContainer>
   )
 
@@ -935,12 +854,10 @@ function App() {
           
           {currentStep === 'intro' && renderIntro()}
           {currentStep === 'goals' && renderGoals()}
-          {currentStep === 'approve' && renderApprove()}
-          {currentStep === 'saved' && renderSaved()}
+          {currentStep === 'review-goals' && renderApprove()}
           {currentStep === 'assessments' && renderAssessments()}
-          {currentStep === 'assessment-review' && renderAssessmentReview()}
-          {currentStep === 'assessment-saved' && renderAssessmentSaved()}
-          {currentStep === 'learning-objectives' && (
+          {currentStep === 'review-assessments' && renderAssessmentReview()}
+          {currentStep === 'objectives' && (
             <StepContainer 
               title="Generating Learning Objectives..." 
               description="Please wait while we create learning objectives aligned with your goals and assessments using Bloom's Taxonomy..."
@@ -950,8 +867,8 @@ function App() {
               )}
             </StepContainer>
           )}
-          {currentStep === 'objectives-review' && renderObjectivesReview()}
-          {currentStep === 'objectives-saved' && renderObjectivesSaved()}
+          {currentStep === 'review-objectives' && renderObjectivesReview()}
+          {currentStep === 'complete' && renderObjectivesSaved()}
         </ErrorBoundary>
       </main>
     </div>

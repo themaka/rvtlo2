@@ -20,19 +20,16 @@ export interface LearningObjective {
   assessmentAlignment: string
 }
 
-// Application flow types
+// Application flow types - Streamlined 8-step workflow
 export type Step = 
   | 'intro' 
   | 'goals' 
-  | 'refine' 
-  | 'approve' 
-  | 'saved' 
+  | 'review-goals' 
   | 'assessments' 
-  | 'assessment-review' 
-  | 'assessment-saved' 
-  | 'learning-objectives' 
-  | 'objectives-review' 
-  | 'objectives-saved'
+  | 'review-assessments' 
+  | 'objectives' 
+  | 'review-objectives' 
+  | 'complete'
 
 export type CourseType = 'course' | 'workshop'
 

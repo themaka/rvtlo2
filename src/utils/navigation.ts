@@ -1,17 +1,15 @@
 import type { Step, Goal, Assessment, LearningObjective } from '../types'
 
-// Define the step order for the workflow
+// Define the step order for the streamlined workflow (8 steps)
 export const STEP_ORDER: Step[] = [
   'intro',
   'goals', 
-  'approve',
-  'saved',
+  'review-goals',
   'assessments',
-  'assessment-review',
-  'assessment-saved',
-  'learning-objectives',
-  'objectives-review',
-  'objectives-saved'
+  'review-assessments',
+  'objectives',
+  'review-objectives',
+  'complete'
 ]
 
 // Interface for the application state needed for navigation decisions
@@ -70,21 +68,17 @@ export function canNavigateToStep(targetStep: Step, state: NavigationState): boo
       return true
     case 'goals':
       return state.courseType !== null && state.isSubjectConfirmed && state.isSetupComplete
-    case 'approve':
+    case 'review-goals':
       return state.goals.length > 0
-    case 'saved':
-      return state.approvedGoals.length > 0
     case 'assessments':
       return state.approvedGoals.length > 0
-    case 'assessment-review':
+    case 'review-assessments':
       return state.refinedAssessments.length > 0
-    case 'assessment-saved':
-      return state.approvedAssessments.length > 0
-    case 'learning-objectives':
+    case 'objectives':
       return state.approvedGoals.length > 0 && state.approvedAssessments.length > 0
-    case 'objectives-review':
+    case 'review-objectives':
       return state.refinedObjectives.length > 0
-    case 'objectives-saved':
+    case 'complete':
       return state.approvedObjectives.length > 0
     default:
       return false
@@ -154,7 +148,7 @@ export function getPreviousStep(currentStep: Step): Step | null {
  * Checks if the workflow is complete (reached final step)
  */
 export function isWorkflowComplete(currentStep: Step): boolean {
-  return currentStep === 'objectives-saved'
+  return currentStep === 'complete'
 }
 
 /**

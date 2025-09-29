@@ -318,7 +318,7 @@ Make each refined goal clear, actionable, and focused on student outcomes specif
       callbacks.setRefinedGoals(refinedGoalsList)
     }
 
-    callbacks.setCurrentStep('approve')
+    callbacks.setCurrentStep('review-goals')
   } catch (error) {
     console.error('Error refining goals:', error)
     
@@ -354,7 +354,7 @@ Make each refined goal clear, actionable, and focused on student outcomes specif
     callbacks.setLoadingMessage('Error occurred - using original goals')
     // Fallback to original goals if AI fails
     callbacks.setRefinedGoals(goals.map(goal => ({ ...goal, isRefined: true })))
-    callbacks.setCurrentStep('approve')
+    callbacks.setCurrentStep('review-goals')
   } finally {
     callbacks.setIsRefining(false)
     callbacks.setLoadingMessage('')
@@ -564,7 +564,7 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
     callbacks.setProgress(100)
     
     callbacks.setRefinedAssessments(assessmentsList)
-    callbacks.setCurrentStep('assessment-review')
+    callbacks.setCurrentStep('review-assessments')
   } catch (error) {
     console.error('Error generating assessments:', error)
     callbacks.setLoadingMessage('Error occurred - creating fallback assessments...')
@@ -589,7 +589,7 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
       return fallback
     })
     callbacks.setRefinedAssessments(fallbackAssessments)
-    callbacks.setCurrentStep('assessment-review')
+    callbacks.setCurrentStep('review-assessments')
   } finally {
     callbacks.setIsRefining(false)
     callbacks.setLoadingMessage('')
@@ -831,7 +831,7 @@ Continue for each goal. Ensure objectives progress logically through Bloom's lev
     callbacks.setProgress(100)
 
     callbacks.setRefinedObjectives(objectivesList)
-    callbacks.setCurrentStep('objectives-review')
+    callbacks.setCurrentStep('review-objectives')
   } catch (error) {
     console.error('Error generating learning objectives:', error)
     callbacks.setLoadingMessage('Error occurred - creating fallback objectives...')
@@ -843,7 +843,7 @@ Continue for each goal. Ensure objectives progress logically through Bloom's lev
       return createEnhancedFallbackObjectives(goal, goalIndex, relatedAssessment)
     })
     callbacks.setRefinedObjectives(fallbackObjectives)
-    callbacks.setCurrentStep('objectives-review')
+    callbacks.setCurrentStep('review-objectives')
   } finally {
     callbacks.setIsRefining(false)
     callbacks.setLoadingMessage('')
