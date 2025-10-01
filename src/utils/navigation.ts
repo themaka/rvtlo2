@@ -1,13 +1,11 @@
 import type { Step, Goal, Assessment, LearningObjective } from '../types'
 
-// Define the step order for the streamlined workflow (8 steps)
+// Define the step order for the streamlined workflow (6 steps)
 export const STEP_ORDER: Step[] = [
   'intro',
   'goals', 
   'review-goals',
   'assessments',
-  'review-assessments',
-  'objectives',
   'review-objectives',
   'complete'
 ]
@@ -71,11 +69,7 @@ export function canNavigateToStep(targetStep: Step, state: NavigationState): boo
     case 'review-goals':
       return state.goals.length > 0
     case 'assessments':
-      return state.approvedGoals.length > 0
-    case 'review-assessments':
       return state.refinedAssessments.length > 0
-    case 'objectives':
-      return state.approvedGoals.length > 0 && state.approvedAssessments.length > 0
     case 'review-objectives':
       return state.refinedObjectives.length > 0
     case 'complete':

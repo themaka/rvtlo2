@@ -20,14 +20,12 @@ export interface LearningObjective {
   assessmentAlignment: string
 }
 
-// Application flow types - Streamlined 8-step workflow
+// Application flow types - Streamlined 6-step workflow
 export type Step = 
   | 'intro' 
   | 'goals' 
   | 'review-goals' 
   | 'assessments' 
-  | 'review-assessments' 
-  | 'objectives' 
   | 'review-objectives' 
   | 'complete'
 

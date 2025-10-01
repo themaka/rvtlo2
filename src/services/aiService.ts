@@ -564,7 +564,7 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
     callbacks.setProgress(100)
     
     callbacks.setRefinedAssessments(assessmentsList)
-    callbacks.setCurrentStep('review-assessments')
+    callbacks.setCurrentStep('assessments')
   } catch (error) {
     console.error('Error generating assessments:', error)
     callbacks.setLoadingMessage('Error occurred - creating fallback assessments...')

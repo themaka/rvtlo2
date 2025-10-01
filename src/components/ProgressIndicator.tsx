@@ -19,13 +19,11 @@ export const ProgressIndicator = memo(function ProgressIndicator({
 }: ProgressIndicatorProps) {
   const steps: StepInfo[] = [
     { key: 'intro', label: '1. Setup' },
-    { key: 'goals', label: '2. Goals' },
+    { key: 'goals', label: '2. Set Goals' },
     { key: 'review-goals', label: '3. Review Goals' },
     { key: 'assessments', label: '4. Assessments' },
-    { key: 'review-assessments', label: '5. Review Assessments' },
-    { key: 'objectives', label: '6. Objectives' },
-    { key: 'review-objectives', label: '7. Review Objectives' },
-    { key: 'complete', label: '8. Complete' }
+    { key: 'review-objectives', label: '5. Review Objectives' },
+    { key: 'complete', label: '6. Complete' }
   ]
 
   return (

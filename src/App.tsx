@@ -186,7 +186,7 @@ function App() {
 
   const approveGoals = useCallback(async () => {
     setApprovedGoals(refinedGoals)
-    // Automatically generate assessments instead of stopping at intermediate screen
+    // Automatically generate assessments and go directly to review
     // Pass refinedGoals directly to avoid state timing issues
     await generateAssessments(refinedGoals)
   }, [refinedGoals, setApprovedGoals, generateAssessments])
@@ -589,43 +589,6 @@ function App() {
 
   const renderAssessments = () => (
     <StepContainer 
-      title="Design Assessment Strategies"
-      description="Now let's develop assessment strategies for each of your learning goals. The AI will suggest multiple assessment options for each goal."
-    >
-
-      <div className="saved-goals">
-        <h3>Your Learning Goals:</h3>
-        {approvedGoals.map((goal, index) => (
-          <div key={goal.id} className="saved-goal-item">
-            <strong>Goal {index + 1}:</strong> <span>{goal.description}</span>
-          </div>
-        ))}
-      </div>
-
-      <ButtonGroup>
-        <button
-          className="secondary-button"
-          onClick={() => setCurrentStep('review-goals')}
-        >
-          Back to Goals
-        </button>
-        <button
-          className="primary-button"
-          onClick={() => generateAssessments()}
-          disabled={isRefining}
-        >
-          {isRefining ? 'Generating Assessment Strategies...' : 'Generate Assessment Strategies'}
-        </button>
-      </ButtonGroup>
-
-      {isRefining && (
-        <LoadingIndicator message={loadingMessage} progress={progress} />
-      )}
-    </StepContainer>
-  )
-
-  const renderAssessmentReview = () => (
-    <StepContainer 
       title="Review Assessment Strategies"
       description="Here are the AI-generated assessment strategies for each of your learning goals:"
     >
@@ -677,9 +640,9 @@ function App() {
           </button>
           <button
             className="secondary-button"
-            onClick={() => setCurrentStep('assessments')}
+            onClick={() => setCurrentStep('review-goals')}
           >
-            Revise Assessments
+            Back to Goals
           </button>
         </ButtonGroup>
       </div>
@@ -689,6 +652,8 @@ function App() {
       )}
     </StepContainer>
   )
+
+
 
   
 
@@ -747,7 +712,7 @@ function App() {
           </button>
           <button
             className="secondary-button"
-            onClick={() => setCurrentStep('review-assessments')}
+            onClick={() => setCurrentStep('assessments')}
           >
             Revise Objectives
           </button>
@@ -857,7 +822,6 @@ function App() {
           {currentStep === 'goals' && renderGoals()}
           {currentStep === 'review-goals' && renderApprove()}
           {currentStep === 'assessments' && renderAssessments()}
-          {currentStep === 'review-assessments' && renderAssessmentReview()}
           {currentStep === 'objectives' && (
             <StepContainer 
               title="Generating Learning Objectives..." 
