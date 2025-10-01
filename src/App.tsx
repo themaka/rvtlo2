@@ -541,22 +541,23 @@ function App() {
         </div>
       )}
 
-      <div className="refined-goals">
-        {refinedGoals.map((goal, index) => (
-          <div key={goal.id} className="refined-goal-item">
-            <strong>Refined Goal {index + 1}:</strong>
-            <p>{goal.description}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="original-goals">
-        <h3>Your Original Goals:</h3>
-        {goals.map((goal, index) => (
-          <div key={goal.id} className="original-goal-item">
-            <strong>Original {index + 1}:</strong> {goal.description}
-          </div>
-        ))}
+      <div className="goal-comparison-sections">
+        {refinedGoals.map((refinedGoal, index) => {
+          const originalGoal = goals[index] // Assuming they maintain the same order
+          
+          return (
+            <div key={refinedGoal.id} className="goal-comparison-section">
+              <div className="goal-header">
+                <h3>Goal {index + 1}: {originalGoal?.description}</h3>
+              </div>
+              
+              <div className="refined-goal">
+                <h4 className="goal-section-header">AI-Refined Goal:</h4>
+                <p className="refined-goal-text">{refinedGoal.description}</p>
+              </div>
+            </div>
+          )
+        })}
       </div>
 
       <div className="confirmation-question">
