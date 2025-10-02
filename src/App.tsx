@@ -822,17 +822,15 @@ function App() {
           {currentStep === 'goals' && renderGoals()}
           {currentStep === 'review-goals' && renderApprove()}
           {currentStep === 'assessments' && renderAssessments()}
-          {currentStep === 'objectives' && (
+          {currentStep === 'review-objectives' && isRefining && (
             <StepContainer 
               title="Generating Learning Objectives..." 
               description="Please wait while we create learning objectives aligned with your goals and assessments using Bloom's Taxonomy..."
             >
-              {isRefining && (
-                <LoadingIndicator message={loadingMessage} progress={progress} />
-              )}
+              <LoadingIndicator message={loadingMessage} progress={progress} />
             </StepContainer>
           )}
-          {currentStep === 'review-objectives' && renderObjectivesReview()}
+          {currentStep === 'review-objectives' && !isRefining && renderObjectivesReview()}
           {currentStep === 'complete' && renderObjectivesSaved()}
         </ErrorBoundary>
       </main>

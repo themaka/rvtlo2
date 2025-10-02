@@ -564,7 +564,7 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
     callbacks.setProgress(100)
     
     callbacks.setRefinedAssessments(assessmentsList)
-    callbacks.setCurrentStep('assessments')
+    callbacks.setCurrentStep('review-objectives')
   } catch (error) {
     console.error('Error generating assessments:', error)
     callbacks.setLoadingMessage('Error occurred - creating fallback assessments...')
@@ -589,7 +589,7 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
       return fallback
     })
     callbacks.setRefinedAssessments(fallbackAssessments)
-    callbacks.setCurrentStep('review-assessments')
+    callbacks.setCurrentStep('review-objectives')
   } finally {
     callbacks.setIsRefining(false)
     callbacks.setLoadingMessage('')
