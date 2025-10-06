@@ -596,6 +596,7 @@ function App() {
       {approvedGoals.map((goal, goalIndex) => {
         // Find the assessment that matches this specific goal ID
         const correspondingAssessment = refinedAssessments.find(assessment => assessment.goalId === goal.id)
+        const originalGoal = goals[goalIndex] // Get the original goal that user submitted
         
         // Debug logging for troubleshooting
         console.log(`Goal ${goalIndex + 1} (ID: ${goal.id}):`, goal.description)
@@ -608,7 +609,7 @@ function App() {
           return (
             <div key={`missing-${goal.id}`} className="assessment-review-section">
               <div className="goal-header">
-                <h3>Goal {goalIndex + 1}</h3>
+                <h3>Goal {goalIndex + 1}: {originalGoal?.description || 'Unknown Goal'}</h3>
                 <p className="goal-text">{goal.description}</p>
               </div>
               
@@ -632,7 +633,7 @@ function App() {
         return (
           <div key={correspondingAssessment.id} className="assessment-review-section">
             <div className="goal-header">
-              <h3>Goal {goalIndex + 1}</h3>
+              <h3>Goal {goalIndex + 1}: {originalGoal?.description || 'Unknown Goal'}</h3>
               <p className="goal-text">{goal.description}</p>
             </div>
             
@@ -694,11 +695,12 @@ function App() {
       {approvedGoals.map((goal, goalIndex) => {
         const goalObjectives = refinedObjectives.filter(obj => obj.goalId === goal.id)
         const relatedAssessment = approvedAssessments.find(a => a.goalId === goal.id)
+        const originalGoal = goals[goalIndex] // Get the original goal that user submitted
         
         return (
           <div key={goal.id} className="objectives-review-section">
             <div className="goal-header">
-              <h3>Goal {goalIndex + 1}</h3>
+              <h3>Goal {goalIndex + 1}: {originalGoal?.description || 'Unknown Goal'}</h3>
               <p className="goal-text">{goal.description}</p>
             </div>
             
@@ -762,11 +764,12 @@ function App() {
       {approvedGoals.map((goal, goalIndex) => {
         const goalObjectives = approvedObjectives.filter(obj => obj.goalId === goal.id)
         const relatedAssessment = approvedAssessments.find(a => a.goalId === goal.id)
+        const originalGoal = goals[goalIndex] // Get the original goal that user submitted
         
         return (
           <div key={goal.id} className="complete-framework-section">
             <div className="goal-header">
-              <h3>Goal {goalIndex + 1}</h3>
+              <h3>Goal {goalIndex + 1}: {originalGoal?.description || 'Unknown Goal'}</h3>
               <p className="goal-text">{goal.description}</p>
             </div>
             
