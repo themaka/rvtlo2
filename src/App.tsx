@@ -593,19 +593,47 @@ function App() {
       description="Here are the AI-generated assessment strategies for each of your learning goals:"
     >
 
-      {refinedAssessments.map((assessment, index) => {
-        const correspondingGoal = approvedGoals.find(goal => goal.id === assessment.goalId)
-        const strategies = parseAssessmentStrategies(assessment.description)
+      {approvedGoals.map((goal, goalIndex) => {
+        // Find the assessment that matches this specific goal ID
+        const correspondingAssessment = refinedAssessments.find(assessment => assessment.goalId === goal.id)
         
-        // Debug logging
-        console.log('Assessment description:', assessment.description)
-        console.log('Parsed strategies:', strategies)
+        // Debug logging for troubleshooting
+        console.log(`Goal ${goalIndex + 1} (ID: ${goal.id}):`, goal.description)
+        console.log(`Looking for assessment with goalId: ${goal.id}`)
+        console.log('Found assessment:', correspondingAssessment)
+        console.log('All refinedAssessments:', refinedAssessments.map(a => ({ id: a.id, goalId: a.goalId, description: a.description.substring(0, 50) + '...' })))
+        
+        if (!correspondingAssessment) {
+          console.error(`No assessment found for goal ${goalIndex + 1} with ID ${goal.id}`)
+          return (
+            <div key={`missing-${goal.id}`} className="assessment-review-section">
+              <div className="goal-header">
+                <h3>Goal {goalIndex + 1}</h3>
+                <p className="goal-text">{goal.description}</p>
+              </div>
+              
+              <div className="assessment-strategies">
+                <h4>Assessment Strategies:</h4>
+                <div className="error-message">
+                  <i className="error-icon">⚠️</i>
+                  No assessment strategies were generated for this goal. Please try regenerating assessments or contact support.
+                </div>
+              </div>
+            </div>
+          )
+        }
+        
+        const strategies = parseAssessmentStrategies(correspondingAssessment.description)
+        
+        // Debug logging for strategy parsing
+        console.log(`Assessment description for goal ${goalIndex + 1}:`, correspondingAssessment.description)
+        console.log(`Parsed strategies for goal ${goalIndex + 1}:`, strategies)
         
         return (
-          <div key={assessment.id} className="assessment-review-section">
+          <div key={correspondingAssessment.id} className="assessment-review-section">
             <div className="goal-header">
-              <h3>Goal {index + 1}</h3>
-              <p className="goal-text">{correspondingGoal?.description}</p>
+              <h3>Goal {goalIndex + 1}</h3>
+              <p className="goal-text">{goal.description}</p>
             </div>
             
             <div className="assessment-strategies">
@@ -620,7 +648,7 @@ function App() {
                 </ul>
               ) : (
                 <div className="single-strategy">
-                  <p>{assessment.description}</p>
+                  <p>{correspondingAssessment.description}</p>
                 </div>
               )}
             </div>

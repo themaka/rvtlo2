@@ -457,114 +457,195 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
     console.log('AI Assessment Response:', aiResponse)
     console.log('AI Response length:', aiResponse.length)
 
-    // Parse AI response and create assessment suggestions
+    // Parse AI response and create assessment suggestions with improved robustness
     const assessmentsList: Assessment[] = []
     const lines = aiResponse.split('\n').filter((line: string) => line.trim())
     console.log('Filtered lines:', lines)
 
+    // First, try the primary parsing method with better validation
     let currentGoalIndex = -1
     let currentAssessmentText = ''
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim()
       
-      // Look for assessment headers (more flexible matching)
-      const assessmentMatch = line.match(/^ASSESSMENT\s+FOR\s+GOAL\s+(\d+):\s*(.*)$/i)
+      // Look for assessment headers with more flexible patterns
+      const assessmentMatch = line.match(/^(?:ASSESSMENT\s+FOR\s+GOAL\s+(\d+):|GOAL\s+(\d+)\s+ASSESSMENT:|ASSESSMENTS?\s+FOR\s+GOAL\s+(\d+))\s*(.*)$/i)
       
       if (assessmentMatch) {
-        console.log('Found assessment match:', assessmentMatch)
-        // Save previous assessment if we have one
-        if (currentGoalIndex >= 0 && currentAssessmentText.trim()) {
-          console.log('Saving previous assessment:', currentAssessmentText.trim())
-          assessmentsList.push({
-            id: Date.now() + currentGoalIndex,
-            goalId: approvedGoals[currentGoalIndex].id,
-            description: currentAssessmentText.trim(),
-            isRefined: true
-          })
-        }
+        const goalNum = assessmentMatch[1] || assessmentMatch[2] || assessmentMatch[3]
+        const goalIndex = parseInt(goalNum) - 1
         
-        // Start new assessment
-        currentGoalIndex = parseInt(assessmentMatch[1]) - 1
-        currentAssessmentText = assessmentMatch[2] || ''
-        console.log('Started new assessment for goal index:', currentGoalIndex)
+        console.log('Found assessment match for goal:', goalNum, 'text:', assessmentMatch[4] || '')
+        
+        // Validate goal index is within bounds
+        if (goalIndex >= 0 && goalIndex < approvedGoals.length) {
+          // Save previous assessment if we have one
+          if (currentGoalIndex >= 0 && currentAssessmentText.trim() && currentGoalIndex < approvedGoals.length) {
+            console.log('Saving previous assessment for goal', currentGoalIndex + 1, ':', currentAssessmentText.trim())
+            assessmentsList.push({
+              id: Date.now() + currentGoalIndex + Math.random() * 1000, // Add randomness to prevent ID collisions
+              goalId: approvedGoals[currentGoalIndex].id,
+              description: currentAssessmentText.trim(),
+              isRefined: true
+            })
+          }
+          
+          // Start new assessment
+          currentGoalIndex = goalIndex
+          currentAssessmentText = (assessmentMatch[4] || '').trim()
+          console.log('Started new assessment for goal index:', currentGoalIndex)
+        } else {
+          console.warn('Invalid goal index found:', goalIndex, 'Expected 0 to', approvedGoals.length - 1)
+        }
       } else if (currentGoalIndex >= 0 && line) {
         // Continue building the current assessment text
         currentAssessmentText += (currentAssessmentText ? ' ' : '') + line
-        console.log('Building assessment text:', currentAssessmentText)
+        console.log('Building assessment text for goal', currentGoalIndex + 1, ':', currentAssessmentText.substring(0, 100) + '...')
       }
     }
 
     // Don't forget the last assessment
     if (currentGoalIndex >= 0 && currentAssessmentText.trim() && currentGoalIndex < approvedGoals.length) {
-      console.log('Saving final assessment:', currentAssessmentText.trim())
+      console.log('Saving final assessment for goal', currentGoalIndex + 1, ':', currentAssessmentText.trim())
       assessmentsList.push({
-        id: Date.now() + currentGoalIndex,
+        id: Date.now() + currentGoalIndex + Math.random() * 1000,
         goalId: approvedGoals[currentGoalIndex].id,
         description: currentAssessmentText.trim(),
         isRefined: true
       })
     }
 
-    console.log('Final assessments list:', assessmentsList)
+    console.log('Primary parsing result - found', assessmentsList.length, 'assessments from', approvedGoals.length, 'goals')
 
-    // If no assessments were parsed, try alternative parsing methods
-    if (assessmentsList.length === 0 && aiResponse.length > 50) {
-      console.log('Trying alternative parsing methods...')
+    // Validation: Ensure we have assessments for all goals
+    const missingGoalIds = approvedGoals
+      .filter(goal => !assessmentsList.some(assessment => assessment.goalId === goal.id))
+      .map(goal => goal.id)
+    
+    if (missingGoalIds.length > 0) {
+      console.warn('Missing assessments for goal IDs:', missingGoalIds)
+    }
+
+    // If we don't have assessments for all goals or parsing failed entirely, try alternative methods
+    if (assessmentsList.length === 0 || assessmentsList.length < approvedGoals.length) {
+      console.log('Trying alternative parsing methods... Current count:', assessmentsList.length, 'Expected:', approvedGoals.length)
       
-      // Try parsing by goal numbers (1., 2., 3., etc.)
-      const goalMatches = aiResponse.match(/(\d+\.\s*[^1-9]+?)(?=\d+\.|$)/gs)
-      if (goalMatches && goalMatches.length > 0) {
-        console.log('Found goal-based matches:', goalMatches)
-        goalMatches.forEach((match: string, index: number) => {
-          if (index < approvedGoals.length) {
-            const cleanText = match.replace(/^\d+\.\s*/, '').trim()
-            if (cleanText.length > 10) {
+      // Clear existing assessments if primary parsing was incomplete
+      if (assessmentsList.length > 0 && assessmentsList.length < approvedGoals.length) {
+        console.log('Primary parsing was incomplete, clearing and starting over')
+        assessmentsList.length = 0
+      }
+      
+      // Method 1: Try parsing by goal numbers (1., 2., 3., etc.)
+      const goalSections = aiResponse.split(/(?=\b(?:GOAL\s+\d+|ASSESSMENT\s+FOR\s+GOAL\s+\d+|\d+\.)\b)/i)
+        .filter(section => section.trim().length > 20)
+      
+      if (goalSections.length >= approvedGoals.length) {
+        console.log('Found', goalSections.length, 'goal sections, processing...')
+        goalSections.forEach((section, sectionIndex) => {
+          if (sectionIndex < approvedGoals.length) {
+            // Extract goal number from section header if possible
+            const goalNumMatch = section.match(/(?:GOAL\s+(\d+)|ASSESSMENT\s+FOR\s+GOAL\s+(\d+)|^(\d+)\.)/i)
+            let targetGoalIndex = sectionIndex // Default to section order
+            
+            if (goalNumMatch) {
+              const goalNum = goalNumMatch[1] || goalNumMatch[2] || goalNumMatch[3]
+              const parsedIndex = parseInt(goalNum) - 1
+              if (parsedIndex >= 0 && parsedIndex < approvedGoals.length) {
+                targetGoalIndex = parsedIndex
+              }
+            }
+            
+            // Clean the section text
+            const cleanText = section
+              .replace(/^(?:GOAL\s+\d+|ASSESSMENT\s+FOR\s+GOAL\s+\d+|\d+\.)\s*:?\s*/i, '')
+              .trim()
+            
+            if (cleanText.length > 15 && !assessmentsList.some(a => a.goalId === approvedGoals[targetGoalIndex].id)) {
               assessmentsList.push({
-                id: Date.now() + index,
-                goalId: approvedGoals[index].id,
+                id: Date.now() + targetGoalIndex + Math.random() * 1000,
+                goalId: approvedGoals[targetGoalIndex].id,
                 description: cleanText,
                 isRefined: true
               })
+              console.log('Alternative method: Added assessment for goal', targetGoalIndex + 1)
             }
           }
         })
       }
       
-      // If still no luck, try splitting by double newlines or paragraphs
-      if (assessmentsList.length === 0) {
+      // Method 2: If still missing assessments, try paragraph-based splitting
+      if (assessmentsList.length < approvedGoals.length) {
         const paragraphs = aiResponse.split(/\n\s*\n/).filter(p => p.trim().length > 20)
-        console.log('Found paragraphs:', paragraphs)
-        paragraphs.forEach((paragraph, index) => {
-          if (index < approvedGoals.length) {
+        console.log('Trying paragraph-based parsing with', paragraphs.length, 'paragraphs')
+        
+        paragraphs.forEach((paragraph) => {
+          if (assessmentsList.length < approvedGoals.length) {
+            const goalIndex = assessmentsList.length // Use current count as index
             assessmentsList.push({
-              id: Date.now() + index,
-              goalId: approvedGoals[index].id,
+              id: Date.now() + goalIndex + Math.random() * 1000,
+              goalId: approvedGoals[goalIndex].id,
               description: paragraph.trim(),
               isRefined: true
             })
+            console.log('Paragraph method: Added assessment for goal', goalIndex + 1)
           }
         })
       }
     }
 
-    // If no assessments were parsed, create meaningful fallback assessments
-    if (assessmentsList.length === 0) {
-      console.log('No assessments parsed, creating subject-specific fallback assessments')
-      approvedGoals.forEach((goal, index) => {
-        const fallback = createSubjectSpecificFallback(context.courseSubject, index)
+    // Ensure all goals have assessments - create fallbacks for missing ones
+    const finalAssessmentsList: Assessment[] = []
+    approvedGoals.forEach((goal, goalIndex) => {
+      let existingAssessment = assessmentsList.find(assessment => assessment.goalId === goal.id)
+      
+      if (!existingAssessment) {
+        console.log('Creating fallback assessment for goal', goalIndex + 1, 'with ID:', goal.id)
+        const fallback = createSubjectSpecificFallback(context.courseSubject, goalIndex)
         fallback.goalId = goal.id
-        assessmentsList.push(fallback)
-      })
-    }
+        existingAssessment = fallback
+      } else {
+        console.log('Found existing assessment for goal', goalIndex + 1, 'with ID:', goal.id)
+      }
+      
+      finalAssessmentsList.push(existingAssessment)
+    })
+    
+    // Replace the assessments list with the properly ordered and complete list
+    assessmentsList.length = 0
+    assessmentsList.push(...finalAssessmentsList)
 
     console.log('Parsed assessments:', assessmentsList)
     
     callbacks.setLoadingMessage('Finalizing assessment strategies...')
     callbacks.setProgress(100)
     
+    // Final validation and logging
+    console.log('=== FINAL ASSESSMENT GENERATION SUMMARY ===')
+    console.log('Expected goals count:', approvedGoals.length)
+    console.log('Generated assessments count:', assessmentsList.length)
+    console.log('Goals:', approvedGoals.map((g, i) => ({ index: i + 1, id: g.id, description: g.description.substring(0, 50) + '...' })))
+    console.log('Assessments:', assessmentsList.map((a, i) => ({ index: i + 1, id: a.id, goalId: a.goalId, description: a.description.substring(0, 50) + '...' })))
+    
+    // Verify mapping
+    const mappingErrors: string[] = []
+    approvedGoals.forEach((goal, goalIndex) => {
+      const matchingAssessment = assessmentsList.find(a => a.goalId === goal.id)
+      if (!matchingAssessment) {
+        mappingErrors.push(`Goal ${goalIndex + 1} (ID: ${goal.id}) has no matching assessment`)
+      }
+    })
+    
+    if (mappingErrors.length > 0) {
+      console.error('ASSESSMENT MAPPING ERRORS:', mappingErrors)
+    } else {
+      console.log('✓ All goals have matching assessments')
+    }
+    console.log('=== END SUMMARY ===')
+    
     callbacks.setRefinedAssessments(assessmentsList)
-    callbacks.setCurrentStep('review-objectives')
+    callbacks.setCurrentStep('assessments')
   } catch (error) {
     console.error('Error generating assessments:', error)
     callbacks.setLoadingMessage('Error occurred - creating fallback assessments...')
@@ -589,7 +670,7 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
       return fallback
     })
     callbacks.setRefinedAssessments(fallbackAssessments)
-    callbacks.setCurrentStep('review-objectives')
+    callbacks.setCurrentStep('assessments')
   } finally {
     callbacks.setIsRefining(false)
     callbacks.setLoadingMessage('')
