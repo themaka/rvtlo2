@@ -707,6 +707,141 @@ function App() {
 
   
 
+  // Helper function to parse assessment text and detect titles vs descriptions
+  const parseAssessmentText = useCallback((description: string) => {
+    if (!description || description.trim().length === 0) {
+      return []
+    }
+
+    // Structure to hold parsed assessments with titles and descriptions
+    interface AssessmentStrategy {
+      title?: string;
+      description: string;
+      isFullText?: boolean;
+    }
+
+    let strategies: AssessmentStrategy[] = []
+    
+    // Method 1: Look for markdown titles followed by content (e.g., "**Title**: Description")
+    const markdownTitlePattern = /\*\s*\*\*([^*]+?)\*\*:\s*(.+?)(?=\*\s*\*\*[^*]+?\*\*:|$)/gs
+    const markdownMatches = Array.from(description.matchAll(markdownTitlePattern))
+    
+    if (markdownMatches.length > 0) {
+      strategies = markdownMatches.map(match => ({
+        title: match[1].trim(),
+        description: match[2].trim()
+      }))
+    }
+    
+    // Method 2: Look for simple title-colon-description pattern (e.g., "Title: Description")
+    if (strategies.length === 0) {
+      const titleColonPattern = /([^:]+?):\s*(.+?)(?=\n[^:]+?:|$)/gs
+      const titleColonMatches = Array.from(description.matchAll(titleColonPattern))
+      
+      if (titleColonMatches.length > 0) {
+        strategies = titleColonMatches.map(match => ({
+          title: match[1].trim().replace(/\.$/, '').replace(/^\*+\s*|\*+$/g, ''), // Remove asterisks and periods
+          description: match[2].trim()
+        }))
+      }
+    }
+    
+    // Method 3: Split on asterisk-separated strategies pattern
+    if (strategies.length === 0) {
+      // Look for patterns like "* **Title**: Description"
+      const asteriskStrategyPattern = /\*\s*\*\*([^*]+?)\*\*:\s*([^*]+?)(?=\*\s*\*\*|$)/gs
+      const asteriskStrategyMatches = Array.from(description.matchAll(asteriskStrategyPattern))
+      
+      if (asteriskStrategyMatches.length > 0) {
+        strategies = asteriskStrategyMatches.map(match => ({
+          title: match[1].trim(),
+          description: match[2].trim()
+        }))
+      } else {
+        // Fallback: simple asterisk splitting
+        const asteriskParts = description
+          .split(/\s*\*\s*/)
+          .map(item => item.trim())
+          .filter(item => item.length > 10)
+        
+        if (asteriskParts.length > 1) {
+          strategies = asteriskParts.map(part => {
+            // Check if this part has a title pattern
+            const titleMatch = part.match(/^\*\*([^*]+?)\*\*:\s*(.+)/)
+            if (titleMatch) {
+              return {
+                title: titleMatch[1].trim(),
+                description: titleMatch[2].trim()
+              }
+            }
+            return {
+              description: part.replace(/^\*+\s*/, ''), // Remove leading asterisks
+              isFullText: true
+            }
+          })
+        }
+      }
+    }
+    
+    // Method 4: Split on numbered lists (1., 2., etc.)
+    if (strategies.length === 0) {
+      const numberedParts = description
+        .split(/\d+\.\s*/)
+        .map(item => item.trim())
+        .filter(item => item.length > 10)
+      
+      if (numberedParts.length > 1) {
+        strategies = numberedParts.map(part => ({
+          description: part,
+          isFullText: true
+        }))
+      }
+    }
+    
+    // Method 5: Split on bullet points or dashes
+    if (strategies.length === 0) {
+      const bulletParts = description
+        .split(/[-•]\s*/)
+        .map(item => item.trim())
+        .filter(item => item.length > 10)
+      
+      if (bulletParts.length > 1) {
+        strategies = bulletParts.map(part => ({
+          description: part,
+          isFullText: true
+        }))
+      }
+    }
+    
+    // Method 6: Split on double line breaks (paragraphs)
+    if (strategies.length === 0) {
+      const paragraphs = description
+        .split(/\n\s*\n/)
+        .map(item => item.trim())
+        .filter(item => item.length > 15)
+      
+      if (paragraphs.length > 1) {
+        strategies = paragraphs.map(part => ({
+          description: part,
+          isFullText: true
+        }))
+      }
+    }
+    
+    // Fallback: Return the full description as a single strategy
+    if (strategies.length === 0) {
+      strategies = [{
+        description: description,
+        isFullText: true
+      }]
+    }
+    
+    console.log('Parsing assessment:', description.substring(0, 100) + '...')
+    console.log('Found strategies:', strategies.length, strategies)
+    
+    return strategies
+  }, [])
+
   const renderObjectivesReview = () => (
     <StepContainer 
       title="Review Learning Objectives"
@@ -717,6 +852,13 @@ function App() {
         const goalObjectives = refinedObjectives.filter(obj => obj.goalId === goal.id)
         const relatedAssessment = approvedAssessments.find(a => a.goalId === goal.id)
         const originalGoal = goals[goalIndex] // Get the original goal that user submitted
+        const assessmentStrategies = relatedAssessment ? parseAssessmentText(relatedAssessment.description) : []
+        
+        // Debug logging
+        if (relatedAssessment) {
+          console.log('Assessment description:', relatedAssessment.description)
+          console.log('Parsed strategies:', assessmentStrategies)
+        }
         
         return (
           <div key={goal.id} className="objectives-review-section">
@@ -726,10 +868,41 @@ function App() {
             </div>
             
             {relatedAssessment && (
-              <div className="assessment-context">
-                <h4>Related Assessment:</h4>
-                <p className="assessment-summary">{relatedAssessment.description.substring(0, 150)}...</p>
-              </div>
+              <details className="assessment-context collapsible">
+                <summary className="assessment-summary-header">
+                  <h4>Related Assessment Strategies</h4>
+                  <span className="toggle-indicator">▼</span>
+                </summary>
+                <div className="assessment-strategies-content">
+                  {assessmentStrategies.length > 1 ? (
+                    <ul className="assessment-strategies-list">
+                      {assessmentStrategies.map((strategy, index) => (
+                        <li key={index} className="assessment-strategy-item">
+                          {strategy.title ? (
+                            <div className="strategy-with-title">
+                              <div className="strategy-title">{strategy.title}</div>
+                              <div className="strategy-description">{strategy.description}</div>
+                            </div>
+                          ) : (
+                            <div className="strategy-full-text">{strategy.description}</div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : assessmentStrategies.length === 1 ? (
+                    assessmentStrategies[0].title ? (
+                      <div className="single-strategy-with-title">
+                        <h5 className="single-strategy-title">{assessmentStrategies[0].title}</h5>
+                        <div className="single-strategy-description">{assessmentStrategies[0].description}</div>
+                      </div>
+                    ) : (
+                      <div className="assessment-text">{assessmentStrategies[0].description}</div>
+                    )
+                  ) : (
+                    <div className="assessment-text">{relatedAssessment.description || 'No assessment description available'}</div>
+                  )}
+                </div>
+              </details>
             )}
             
             <div className="learning-objectives">
@@ -798,7 +971,7 @@ function App() {
               {relatedAssessment && (
                 <div className="assessment-component">
                   <h4>Assessment Strategy:</h4>
-                  <p className="component-text">{relatedAssessment.description.substring(0, 200)}...</p>
+                  <p className="component-text">{relatedAssessment.description}</p>
                 </div>
               )}
               

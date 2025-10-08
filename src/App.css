@@ -671,6 +671,132 @@ main {
   line-height: 1.3 !important;
 }
 
+/* Collapsible Assessment Sections */
+.assessment-context.collapsible {
+  margin: 1rem 0;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  background: #f8f9fa;
+}
+
+.assessment-summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  user-select: none;
+  background: #f0f0f0;
+  border-radius: 6px 6px 0 0;
+  transition: background-color 0.2s ease;
+}
+
+.assessment-summary-header:hover {
+  background: #e8e8e8;
+}
+
+.assessment-summary-header h4 {
+  margin: 0;
+  color: #6f42c1;
+  font-size: 1rem;
+}
+
+.toggle-indicator {
+  font-size: 0.8rem;
+  color: #666;
+  transition: transform 0.2s ease;
+}
+
+details[open] .toggle-indicator {
+  transform: rotate(180deg);
+}
+
+.assessment-strategies-content {
+  padding: 1rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.assessment-strategies-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.assessment-strategy-item {
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 4px;
+  border-left: 3px solid #6f42c1;
+  line-height: 1.5;
+  font-size: 0.9rem;
+  position: relative;
+}
+
+/* Removed bullet styling - clean title/description structure doesn't need bullets */
+
+.assessment-strategy-item:last-child {
+  margin-bottom: 0;
+}
+
+.assessment-text {
+  line-height: 1.5;
+  color: #444;
+  margin: 0;
+  padding: 0.5rem 0;
+  white-space: pre-wrap;
+}
+
+.assessment-strategy-item .assessment-text {
+  margin-left: 0;
+  padding: 0;
+}
+
+/* Enhanced Title/Description Styling */
+.strategy-with-title {
+  margin-left: 0;
+}
+
+.strategy-title {
+  font-weight: 600;
+  color: #6f42c1;
+  font-size: 0.95rem;
+  margin-bottom: 0.4rem;
+  line-height: 1.3;
+}
+
+.strategy-description {
+  color: #444;
+  line-height: 1.5;
+  font-size: 0.9rem;
+}
+
+.strategy-full-text {
+  margin-left: 0;
+  color: #444;
+  line-height: 1.5;
+  font-size: 0.9rem;
+}
+
+/* Single strategy styling */
+.single-strategy-with-title {
+  padding: 0.5rem 0;
+}
+
+.single-strategy-title {
+  font-weight: 600;
+  color: #6f42c1;
+  font-size: 1rem;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.3;
+}
+
+.single-strategy-description {
+  color: #444;
+  line-height: 1.5;
+  font-size: 0.9rem;
+}
+
 .strategy-list {
   list-style: none;
   padding: 0;
