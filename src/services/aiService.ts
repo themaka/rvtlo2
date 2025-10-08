@@ -454,8 +454,15 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
     callbacks.setProgress(70)
 
     console.log('AI Response received:', aiResponse)
-    console.log('AI Assessment Response:', aiResponse)
+    console.log('=== ASSESSMENT PARSING DEBUG ===')
     console.log('AI Response length:', aiResponse.length)
+    console.log('First 200 chars:', aiResponse.substring(0, 200))
+    console.log('Contains "ASSESSMENT":', aiResponse.includes('ASSESSMENT'))
+    console.log('Contains "GOAL":', aiResponse.includes('GOAL'))
+    console.log('🔍 FULL RAW AI RESPONSE:')
+    console.log('---START FULL AI RESPONSE---')
+    console.log(aiResponse)
+    console.log('---END FULL AI RESPONSE---')
 
     // Parse AI response and create assessment suggestions with improved robustness
     const assessmentsList: Assessment[] = []
@@ -469,8 +476,8 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim()
       
-      // Look for assessment headers with more flexible patterns
-      const assessmentMatch = line.match(/^(?:ASSESSMENT\s+FOR\s+GOAL\s+(\d+):|GOAL\s+(\d+)\s+ASSESSMENT:|ASSESSMENTS?\s+FOR\s+GOAL\s+(\d+))\s*(.*)$/i)
+      // Look for assessment headers with more flexible patterns, including markdown headers
+      const assessmentMatch = line.match(/^(?:#{1,3}\s*)?(?:ASSESSMENT\s+FOR\s+GOAL\s+(\d+):|GOAL\s+(\d+)\s+ASSESSMENT:|ASSESSMENTS?\s+FOR\s+GOAL\s+(\d+))\s*(.*)$/i)
       
       if (assessmentMatch) {
         const goalNum = assessmentMatch[1] || assessmentMatch[2] || assessmentMatch[3]
@@ -529,7 +536,13 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
 
     // If we don't have assessments for all goals or parsing failed entirely, try alternative methods
     if (assessmentsList.length === 0 || assessmentsList.length < approvedGoals.length) {
-      console.log('Trying alternative parsing methods... Current count:', assessmentsList.length, 'Expected:', approvedGoals.length)
+      console.log('⚠️ PRIMARY PARSING INCOMPLETE - Trying alternatives...')
+      console.log('- Current assessments found:', assessmentsList.length)
+      console.log('- Expected assessments:', approvedGoals.length)
+      console.log('- AI response analysis:')
+      console.log('  * Length:', aiResponse.length, 'chars')
+      console.log('  * Lines:', aiResponse.split('\n').length)
+      console.log('  * Has assessment keywords:', /assessment|strategy|evaluate|measure/i.test(aiResponse))
       
       // Clear existing assessments if primary parsing was incomplete
       if (assessmentsList.length > 0 && assessmentsList.length < approvedGoals.length) {
@@ -601,8 +614,17 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
       let existingAssessment = assessmentsList.find(assessment => assessment.goalId === goal.id)
       
       if (!existingAssessment) {
-        console.log('Creating fallback assessment for goal', goalIndex + 1, 'with ID:', goal.id)
+        console.log('🔄 CREATING FALLBACK for goal', goalIndex + 1, 'with ID:', goal.id)
+        console.log('  - Goal description:', goal.description.substring(0, 80) + '...')
+        console.log('  - Course subject:', context.courseSubject)
+        console.log('  - RAW AI RESPONSE THAT FAILED TO PARSE:')
+        console.log('---START AI RESPONSE---')
+        console.log(aiResponse)
+        console.log('---END AI RESPONSE---')
+        
+        // Create a fallback that includes both our fallback text AND the raw AI response for debugging
         const fallback = createSubjectSpecificFallback(context.courseSubject, goalIndex)
+        fallback.description = `[PARSING FAILED - SHOWING RAW AI RESPONSE]\n\n${aiResponse}\n\n[END RAW RESPONSE]\n\n${fallback.description}`
         fallback.goalId = goal.id
         existingAssessment = fallback
       } else {
