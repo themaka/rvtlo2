@@ -718,14 +718,14 @@ const createEnhancedFallbackObjectives = (
         goalId: goal.id,
         bloomLevel: 'Apply',
         description: `Demonstrate proper 3D printing techniques and troubleshoot common printing issues`,
-        assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
+        assessmentAlignment: relatedAssessment ? relatedAssessment.description : 'Assessment alignment needed'
       },
       {
         id: Date.now() + goalIndex * 3 + 1,
         goalId: goal.id,
         bloomLevel: 'Analyze',
         description: `Analyze print quality issues and determine appropriate solutions for different printing scenarios`,
-        assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
+        assessmentAlignment: relatedAssessment ? relatedAssessment.description : 'Assessment alignment needed'
       }
     ]
   } else if (goalText.includes('troubleshoot') || goalText.includes('problem')) {
@@ -735,14 +735,14 @@ const createEnhancedFallbackObjectives = (
         goalId: goal.id,
         bloomLevel: 'Analyze',
         description: `Analyze and identify root causes of technical problems systematically`,
-        assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
+        assessmentAlignment: relatedAssessment ? relatedAssessment.description : 'Assessment alignment needed'
       },
       {
         id: Date.now() + goalIndex * 3 + 1,
         goalId: goal.id,
         bloomLevel: 'Apply',
         description: `Apply troubleshooting methodologies to resolve technical issues effectively`,
-        assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
+        assessmentAlignment: relatedAssessment ? relatedAssessment.description : 'Assessment alignment needed'
       }
     ]
   } else {
@@ -753,14 +753,14 @@ const createEnhancedFallbackObjectives = (
         goalId: goal.id,
         bloomLevel: 'Apply',
         description: `Apply core concepts and demonstrate practical skills related to the learning goal`,
-        assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
+        assessmentAlignment: relatedAssessment ? relatedAssessment.description : 'Assessment alignment needed'
       },
       {
         id: Date.now() + goalIndex * 3 + 1,
         goalId: goal.id,
         bloomLevel: 'Analyze',
         description: `Analyze situations and evaluate appropriate approaches for achieving the learning goal`,
-        assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
+        assessmentAlignment: relatedAssessment ? relatedAssessment.description : 'Assessment alignment needed'
       }
     ]
   }
@@ -886,7 +886,7 @@ Continue for each goal. Ensure objectives progress logically through Bloom's lev
               goalId: approvedGoals[currentGoalIndex].id,
               bloomLevel: bloomLevel,
               description: description,
-              assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
+              assessmentAlignment: relatedAssessment ? relatedAssessment.description : 'Assessment alignment needed'
             })
             console.log('Added objective:', bloomLevel, description)
           } else {
@@ -900,7 +900,7 @@ Continue for each goal. Ensure objectives progress logically through Bloom's lev
                 goalId: approvedGoals[currentGoalIndex].id,
                 bloomLevel: firstWord.charAt(0).toUpperCase() + firstWord.slice(1),
                 description: objectiveText,
-                assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
+                assessmentAlignment: relatedAssessment ? relatedAssessment.description : 'Assessment alignment needed'
               })
               console.log('Added objective with detected Bloom level:', firstWord, objectiveText)
             }
@@ -923,8 +923,8 @@ Continue for each goal. Ensure objectives progress logically through Bloom's lev
           id: objectiveId + goalIndex * 3 + levelIndex,
           goalId: goal.id,
           bloomLevel: level,
-          description: `${verbs[levelIndex]} key concepts and skills related to: ${goal.description.substring(0, 80)}${goal.description.length > 80 ? '...' : ''}`,
-          assessmentAlignment: relatedAssessment ? relatedAssessment.description.substring(0, 100) + '...' : 'Assessment alignment needed'
+          description: `${verbs[levelIndex]} key concepts and skills related to: ${goal.description}`,
+          assessmentAlignment: relatedAssessment ? relatedAssessment.description : 'Assessment alignment needed'
         }))
       })
       objectivesList.push(...fallbackObjectives)
