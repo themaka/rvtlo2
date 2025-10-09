@@ -152,58 +152,7 @@ function App() {
     setCurrentStep('complete')
   }, [refinedObjectives, setApprovedObjectives, setCurrentStep])
 
-  // Helper function to parse and format assessment strategies
-  const parseAssessmentStrategies = useCallback((description: string) => {
-    // First, try splitting on asterisks which the AI commonly uses as separators
-    let strategies = description
-      .split(/\s*\*\s*/) // Split on asterisks with optional whitespace
-      .map(item => item.trim())
-      .filter(item => item.length > 10) // Filter out very short fragments
-    
-    // If asterisk splitting worked well, clean and return
-    if (strategies.length > 1) {
-      return strategies.map(item => {
-        let cleaned = item.replace(/^[•\-*]\s*/, '') // Remove any remaining bullet points
-        // Don't add period if it already ends with punctuation
-        if (!cleaned.match(/[.!?]$/)) {
-          cleaned += '.'
-        }
-        return cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
-      })
-    }
-    
-    // Fallback: try semicolon or bullet point splitting
-    strategies = description
-      .split(/[;•]/) 
-      .map(item => item.trim())
-      .filter(item => item.length > 10)
-    
-    if (strategies.length > 1) {
-      return strategies.map(item => {
-        let cleaned = item.replace(/^[•\-*]\s*/, '')
-        if (!cleaned.match(/[.!?]$/)) {
-          cleaned += '.'
-        }
-        return cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
-      })
-    }
-    
-    // Final fallback: try sentence-based splitting for very long text
-    if (description.length > 200) {
-      strategies = description
-        .split(/\.\s+(?=[A-Z])/) // Split on periods followed by capital letters
-        .map(item => item.trim())
-        .filter(item => item.length > 15)
-        .map(item => item.endsWith('.') ? item : item + '.')
-      
-      if (strategies.length > 1) {
-        return strategies
-      }
-    }
-    
-    // If no splitting worked, return original as single item
-    return [description]
-  }, [])
+
 
   const approveGoals = useCallback(async () => {
     setApprovedGoals(refinedGoals)
