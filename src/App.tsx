@@ -634,7 +634,7 @@ function App() {
                 <p className="goal-text">{goal.description}</p>
               </div>
               
-              <div className="assessment-strategies">
+              <div className="assessment-strategies-content">
                 <h4>Assessment Strategies:</h4>
                 <div className="error-message">
                   <i className="error-icon">⚠️</i>
@@ -645,11 +645,11 @@ function App() {
           )
         }
         
-        const strategies = parseAssessmentStrategies(correspondingAssessment.description)
+        const assessmentStrategies = parseAssessmentText(correspondingAssessment.description)
         
         // Debug logging for strategy parsing
         console.log(`Assessment description for goal ${goalIndex + 1}:`, correspondingAssessment.description)
-        console.log(`Parsed strategies for goal ${goalIndex + 1}:`, strategies)
+        console.log(`Parsed strategies for goal ${goalIndex + 1}:`, assessmentStrategies)
         
         return (
           <div key={correspondingAssessment.id} className="assessment-review-section">
@@ -658,20 +658,34 @@ function App() {
               <p className="goal-text">{goal.description}</p>
             </div>
             
-            <div className="assessment-strategies">
+            <div className="assessment-strategies-content">
               <h4>Assessment Strategies:</h4>
-              {strategies.length > 1 ? (
-                <ul className="strategy-list">
-                  {strategies.map((strategy, strategyIndex) => (
-                    <li key={strategyIndex} className="strategy-item">
-                      {strategy}
+              {assessmentStrategies.length > 1 ? (
+                <ul className="assessment-strategies-list">
+                  {assessmentStrategies.map((strategy, index) => (
+                    <li key={index} className="assessment-strategy-item">
+                      {strategy.title ? (
+                        <div className="strategy-with-title">
+                          <div className="strategy-title">{strategy.title}</div>
+                          <div className="strategy-description">{strategy.description}</div>
+                        </div>
+                      ) : (
+                        <div className="strategy-full-text">{strategy.description}</div>
+                      )}
                     </li>
                   ))}
                 </ul>
+              ) : assessmentStrategies.length === 1 ? (
+                assessmentStrategies[0].title ? (
+                  <div className="single-strategy-with-title">
+                    <h5 className="single-strategy-title">{assessmentStrategies[0].title}</h5>
+                    <div className="single-strategy-description">{assessmentStrategies[0].description}</div>
+                  </div>
+                ) : (
+                  <div className="assessment-text">{assessmentStrategies[0].description}</div>
+                )
               ) : (
-                <div className="single-strategy">
-                  <p>{correspondingAssessment.description}</p>
-                </div>
+                <div className="assessment-text">{correspondingAssessment.description || 'No assessment description available'}</div>
               )}
             </div>
           </div>
@@ -798,12 +812,12 @@ function App() {
       }
     }
     
-    // Method 5: Split on bullet points or dashes
+    // Method 5: Split on bullet points (including • in middle of text)
     if (strategies.length === 0) {
       const bulletParts = description
-        .split(/[-•]\s*/)
+        .split(/\s*[•]\s*/)
         .map(item => item.trim())
-        .filter(item => item.length > 10)
+        .filter(item => item.length > 15)
       
       if (bulletParts.length > 1) {
         strategies = bulletParts.map(part => ({
@@ -813,7 +827,39 @@ function App() {
       }
     }
     
-    // Method 6: Split on double line breaks (paragraphs)
+    // Method 6: Split on assessment action patterns (Consider, Students, Create, etc.)
+    if (strategies.length === 0) {
+      const actionParts = description
+        .split(/\.\s+(?=(?:Consider|Students|Create|Implement|Develop|A formative|Portfolio)\b)/)
+        .map(item => item.trim())
+        .filter(item => item.length > 20)
+        .map(item => item.endsWith('.') ? item : item + '.')
+      
+      if (actionParts.length > 1) {
+        strategies = actionParts.map(part => ({
+          description: part,
+          isFullText: true
+        }))
+      }
+    }
+    
+    // Method 7: Split on periods followed by capital letters (general sentence boundaries)
+    if (strategies.length === 0) {
+      const sentenceParts = description
+        .split(/\.\s+(?=[A-Z])/)
+        .map(item => item.trim())
+        .filter(item => item.length > 30)
+        .map(item => item.endsWith('.') ? item : item + '.')
+      
+      if (sentenceParts.length > 1 && sentenceParts.length <= 5) { // Avoid too many tiny fragments
+        strategies = sentenceParts.map(part => ({
+          description: part,
+          isFullText: true
+        }))
+      }
+    }
+    
+    // Method 8: Split on double line breaks (paragraphs)
     if (strategies.length === 0) {
       const paragraphs = description
         .split(/\n\s*\n/)

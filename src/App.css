@@ -712,8 +712,15 @@ details[open] .toggle-indicator {
 }
 
 .assessment-strategies-content {
-  padding: 1rem;
+  padding: 0.5rem 0 0 0;
   border-top: 1px solid #e0e0e0;
+}
+
+.assessment-strategies-content h4 {
+  margin: 0 0 0.75rem 0;
+  color: #333;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .assessment-strategies-list {
