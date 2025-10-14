@@ -1,27 +1,43 @@
 #root {
-  max-width: 900px;
+  /* Height used by the sticky header so layout math can reference it
+     Tune this value if you change header padding / content (e.g. progress
+     badges) so the main content and .step-container min-height calculations
+     remain accurate. */
+  --app-header-height: 112px;
+  max-width: 1920px;
   margin: 0 auto;
-  padding: 2rem;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Helvetica Neue', sans-serif;
   line-height: 1.6;
   font-size: 16px;
+  height: 100vh;
 }
 
 .app-container {
-  min-height: 80vh;
+  
   display: flex;
   flex-direction: column;
   background: #f8f9fa;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+  /* allow sticky children to work properly */
+  overflow: visible;
 }
 
 header {
   background: linear-gradient(135deg, #CC0033 0%, #8F001B 100%);
   color: white;
-  padding: 2rem;
+  padding: 1rem;
   text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+  box-sizing: border-box;
+  /* keep a consistent header height so the main content doesn't jump under it */
+  min-height: var(--app-header-height);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .header-content {
@@ -30,6 +46,7 @@ header {
   align-items: center;
   max-width: 900px;
   margin: 0 auto 1rem auto;
+  min-height: 56px;
 }
 
 .header-left h1 {
@@ -132,6 +149,12 @@ main {
   max-width: 700px;
   margin: 0 auto;
   line-height: 1.6;
+  /* make the step content area fill the viewport below the sticky header */
+  min-height: calc(100vh - var(--app-header-height) - 4rem);
+  /* min-height: 100vh; */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
 
 .step-container h2 {
@@ -1741,4 +1764,12 @@ details[open] .toggle-indicator {
 
 .mt-2 {
   margin-top: 0.5rem;
+}
+
+/* Responsive adjustments for step container height */
+@media (max-width: 640px) {
+  .step-container {
+    min-height: calc(100vh - var(--app-header-height) - 2rem);
+    padding-top: 0.5rem;
+  }
 }
