@@ -966,7 +966,43 @@ function App() {
               {relatedAssessment && (
                 <div className="assessment-component">
                   <h4>Assessment Strategy:</h4>
-                  <p className="component-text">{relatedAssessment.description}</p>
+                  {/* Render parsed strategies to avoid wall-of-text */}
+                  {(() => {
+                    const strategies = parseAssessmentText(relatedAssessment.description)
+                    if (strategies.length > 1) {
+                      return (
+                        <ul className="assessment-strategies-list">
+                          {strategies.map((strategy, i) => (
+                            <li key={i} className="strategy-item">
+                              {strategy.title ? (
+                                <div className="strategy-with-title">
+                                  <div className="strategy-title">{strategy.title}</div>
+                                  <div className="strategy-description">{strategy.description}</div>
+                                </div>
+                              ) : (
+                                <div className="strategy-full-text">{strategy.description}</div>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )
+                    }
+
+                    if (strategies.length === 1) {
+                      const s = strategies[0]
+                      return s.title ? (
+                        <div className="single-strategy-with-title">
+                          <h5 className="single-strategy-title">{s.title}</h5>
+                          <div className="single-strategy-description">{s.description}</div>
+                        </div>
+                      ) : (
+                        <div className="component-text">{s.description}</div>
+                      )
+                    }
+
+                    // Fallback
+                    return <p className="component-text">{relatedAssessment.description}</p>
+                  })()}
                 </div>
               )}
               

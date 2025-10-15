@@ -670,12 +670,15 @@ main {
   background: #f8f9fa;
   padding: 0.75rem;
   border-radius: 6px;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
   font-style: italic;
   color: #495057;
   border-left: 3px solid #dee2e6;
   font-size: 0.95rem;
   line-height: 1.4;
+  /* make the summary visually distinct from the strategies list */
+  border: 1px solid #e9ecef;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
 }
 
 .assessment-strategies {
@@ -735,8 +738,9 @@ details[open] .toggle-indicator {
 }
 
 .assessment-strategies-content {
-  padding: 0.5rem 0 0 0;
-  border-top: 1px solid #e0e0e0;
+  padding: 1rem 0 0 0;
+  border-top: 1px solid #dfe6ee;
+  margin-top: 0.5rem;
 }
 
 .assessment-strategies-content h4 {
@@ -749,7 +753,10 @@ details[open] .toggle-indicator {
 .assessment-strategies-list {
   list-style: none;
   padding: 0;
-  margin: 0;
+  margin: 0.5rem 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .assessment-strategy-item {
@@ -761,6 +768,8 @@ details[open] .toggle-indicator {
   line-height: 1.5;
   font-size: 0.9rem;
   position: relative;
+  /* subtle separator/shadow to lift items off the card */
+  box-shadow: 0 1px 0 rgba(0,0,0,0.03);
 }
 
 /* Removed bullet styling - clean title/description structure doesn't need bullets */
@@ -854,6 +863,17 @@ details[open] .toggle-indicator {
   left: 0.5rem;
   top: 0.6rem;
   font-size: 0.9rem;
+}
+
+/* Remove the check glyph only on the Complete/summary page for visual consistency */
+.complete-framework-section .strategy-item:before {
+  display: none;
+}
+
+/* When the check glyph is hidden, remove the left padding so text lines up with other pages */
+.complete-framework-section .strategy-item {
+  padding-left: 0.75rem; /* previously 1.75rem */
+  border-left: 3px solid #28a745;
 }
 
 .strategy-item:last-child {

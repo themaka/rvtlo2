@@ -416,7 +416,7 @@ export const generateAssessments = async (
     callbacks.setLoadingMessage('Designing assessment strategies...')
     callbacks.setProgress(40)
 
-    const prompt = `I have these approved learning goals for a ${context.courseType} on "${context.courseSubject}":
+  const prompt = `I have these approved learning goals for a ${context.courseType} on "${context.courseSubject}":
 
 INSTRUCTIONAL CONTEXT:
 - Course Type: ${context.courseType}
@@ -438,15 +438,30 @@ Important guidelines:
 - Suggest assessments that provide actionable feedback to students
 - Ensure assessments are realistic and feasible for the given timeframe and audience
 
-For each goal, provide detailed assessment suggestions appropriate for "${context.targetAudience}" over "${context.instructionDuration}". Format your response EXACTLY like this:
+For each goal, provide detailed assessment suggestions appropriate for "${context.targetAudience}" over "${context.instructionDuration}".
 
-ASSESSMENT FOR GOAL 1: [Provide 2-3 specific assessment methods for goal 1, separated by semicolons or bullet points]
+IMPORTANT: Return your response as JSON only (no explanatory text). The JSON must follow this exact schema:
 
-ASSESSMENT FOR GOAL 2: [Provide 2-3 specific assessment methods for goal 2, separated by semicolons or bullet points]
+{
+  "assessments": [
+    {
+      "goal": 1,
+      "strategies": [
+        { "title": "Troubleshooting Lab Practical", "description": "Consider a hands-on lab..." },
+        { "title": null, "description": "Maintain a print-quality portfolio..." }
+      ]
+    },
+    { "goal": 2, "strategies": [ ... ] }
+  ]
+}
 
-ASSESSMENT FOR GOAL 3: [Provide 2-3 specific assessment methods for goal 3, separated by semicolons or bullet points]
+Guidelines for the JSON response:
+- Include one object per goal. Use the numeric goal index matching the order in the APPROVED GOALS list (1-based).
+- For each strategy, include a title when appropriate (or null) and a short description. Provide 2-3 strategies per goal.
+- Ensure all strings are plain text suitable for JSON (escape quotes where necessary).
+- Do NOT include any extra commentary, headings, or non-JSON text. If you cannot follow the JSON format, return valid JSON with an empty "assessments" array.
 
-Make each assessment suggestion concrete, practical, and directly aligned with measuring the specific goal for ${context.courseSubject}.`
+If the model cannot produce JSON, we will fall back to parsing free-form text, but JSON is strongly preferred because it will be deterministic and easy to parse.`
 
     const aiResponse = await callAIFunction(prompt, 'generate-assessments')
 
@@ -464,63 +479,106 @@ Make each assessment suggestion concrete, practical, and directly aligned with m
     console.log(aiResponse)
     console.log('---END FULL AI RESPONSE---')
 
-    // Parse AI response and create assessment suggestions with improved robustness
+    // Try to parse the AI response as JSON first (we now instruct the model to output a strict JSON schema)
     const assessmentsList: Assessment[] = []
-    const lines = aiResponse.split('\n').filter((line: string) => line.trim())
-    console.log('Filtered lines:', lines)
-
-    // First, try the primary parsing method with better validation
-    let currentGoalIndex = -1
-    let currentAssessmentText = ''
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim()
-      
-      // Look for assessment headers with more flexible patterns, including markdown headers
-      const assessmentMatch = line.match(/^(?:#{1,3}\s*)?(?:ASSESSMENT\s+FOR\s+GOAL\s+(\d+):|GOAL\s+(\d+)\s+ASSESSMENT:|ASSESSMENTS?\s+FOR\s+GOAL\s+(\d+))\s*(.*)$/i)
-      
-      if (assessmentMatch) {
-        const goalNum = assessmentMatch[1] || assessmentMatch[2] || assessmentMatch[3]
-        const goalIndex = parseInt(goalNum) - 1
-        
-        console.log('Found assessment match for goal:', goalNum, 'text:', assessmentMatch[4] || '')
-        
-        // Validate goal index is within bounds
-        if (goalIndex >= 0 && goalIndex < approvedGoals.length) {
-          // Save previous assessment if we have one
-          if (currentGoalIndex >= 0 && currentAssessmentText.trim() && currentGoalIndex < approvedGoals.length) {
-            console.log('Saving previous assessment for goal', currentGoalIndex + 1, ':', currentAssessmentText.trim())
-            assessmentsList.push({
-              id: Date.now() + currentGoalIndex + Math.random() * 1000, // Add randomness to prevent ID collisions
-              goalId: approvedGoals[currentGoalIndex].id,
-              description: currentAssessmentText.trim(),
-              isRefined: true
-            })
-          }
-          
-          // Start new assessment
-          currentGoalIndex = goalIndex
-          currentAssessmentText = (assessmentMatch[4] || '').trim()
-          console.log('Started new assessment for goal index:', currentGoalIndex)
-        } else {
-          console.warn('Invalid goal index found:', goalIndex, 'Expected 0 to', approvedGoals.length - 1)
-        }
-      } else if (currentGoalIndex >= 0 && line) {
-        // Continue building the current assessment text
-        currentAssessmentText += (currentAssessmentText ? ' ' : '') + line
-        console.log('Building assessment text for goal', currentGoalIndex + 1, ':', currentAssessmentText.substring(0, 100) + '...')
-      }
+    let parsedJson: unknown = null
+    try {
+      parsedJson = JSON.parse(aiResponse)
+      console.log('AI returned JSON; attempting structured parse')
+    } catch {
+      console.warn('AI did not return valid JSON, falling back to text parsing')
     }
 
-    // Don't forget the last assessment
-    if (currentGoalIndex >= 0 && currentAssessmentText.trim() && currentGoalIndex < approvedGoals.length) {
-      console.log('Saving final assessment for goal', currentGoalIndex + 1, ':', currentAssessmentText.trim())
-      assessmentsList.push({
-        id: Date.now() + currentGoalIndex + Math.random() * 1000,
-        goalId: approvedGoals[currentGoalIndex].id,
-        description: currentAssessmentText.trim(),
-        isRefined: true
-      })
+    if (parsedJson && typeof parsedJson === 'object' && 'assessments' in (parsedJson as object)) {
+      const maybe = (parsedJson as { assessments?: unknown }).assessments
+      if (Array.isArray(maybe)) {
+        // Build assessmentsList from JSON structure
+        const pj = parsedJson as { assessments: unknown[] }
+        pj.assessments.forEach((a) => {
+          if (!a || typeof a !== 'object') return
+          const rec = a as { goal?: number; strategies?: unknown[] }
+          const idx = (typeof rec.goal === 'number' ? rec.goal - 1 : null)
+          if (idx === null || idx < 0 || idx >= approvedGoals.length) return
+
+          // Construct description by joining strategies with clear separators
+          const strategies = Array.isArray(rec.strategies) ? rec.strategies : []
+          const descriptionParts = strategies.map((s) => {
+            if (!s || typeof s !== 'object') return ''
+            const strat = s as { title?: string | null; description?: string }
+            const title = strat.title ? `**${strat.title}**: ` : ''
+            return `${title}${(strat.description || '').trim()}`
+          }).filter((p) => p && p.length > 0) as string[]
+
+          const description = descriptionParts.join('\n\n')
+
+          assessmentsList.push({
+            id: Date.now() + idx + Math.random() * 1000,
+            goalId: approvedGoals[idx].id,
+            description: description,
+            isRefined: true
+          })
+        })
+      } else {
+        // If JSON exists but doesn't match the expected shape, fall through to text parsing below
+      }
+    } else {
+      // Fallback: existing robust free-form text parsing
+      const lines = aiResponse.split('\n').filter((line: string) => line.trim())
+      console.log('Filtered lines:', lines)
+
+      // First, try the primary parsing method with better validation
+      let currentGoalIndex = -1
+      let currentAssessmentText = ''
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim()
+        
+        // Look for assessment headers with more flexible patterns, including markdown headers
+        const assessmentMatch = line.match(/^(?:#{1,3}\s*)?(?:ASSESSMENT\s+FOR\s+GOAL\s+(\d+):|GOAL\s+(\d+)\s+ASSESSMENT:|ASSESSMENTS?\s+FOR\s+GOAL\s+(\d+))\s*(.*)$/i)
+        
+        if (assessmentMatch) {
+          const goalNum = assessmentMatch[1] || assessmentMatch[2] || assessmentMatch[3]
+          const goalIndex = parseInt(goalNum) - 1
+          
+          console.log('Found assessment match for goal:', goalNum, 'text:', assessmentMatch[4] || '')
+          
+          // Validate goal index is within bounds
+          if (goalIndex >= 0 && goalIndex < approvedGoals.length) {
+            // Save previous assessment if we have one
+            if (currentGoalIndex >= 0 && currentAssessmentText.trim() && currentGoalIndex < approvedGoals.length) {
+              console.log('Saving previous assessment for goal', currentGoalIndex + 1, ':', currentAssessmentText.trim())
+              assessmentsList.push({
+                id: Date.now() + currentGoalIndex + Math.random() * 1000,
+                goalId: approvedGoals[currentGoalIndex].id,
+                description: currentAssessmentText.trim(),
+                isRefined: true
+              })
+            }
+            
+            // Start new assessment
+            currentGoalIndex = goalIndex
+            currentAssessmentText = (assessmentMatch[4] || '').trim()
+            console.log('Started new assessment for goal index:', currentGoalIndex)
+          } else {
+            console.warn('Invalid goal index found:', goalIndex, 'Expected 0 to', approvedGoals.length - 1)
+          }
+        } else if (currentGoalIndex >= 0 && line) {
+          // Continue building the current assessment text
+          currentAssessmentText += (currentAssessmentText ? ' ' : '') + line
+          console.log('Building assessment text for goal', currentGoalIndex + 1, ':', currentAssessmentText.substring(0, 100) + '...')
+        }
+      }
+
+      // Don't forget the last assessment
+      if (currentGoalIndex >= 0 && currentAssessmentText.trim() && currentGoalIndex < approvedGoals.length) {
+        console.log('Saving final assessment for goal', currentGoalIndex + 1, ':', currentAssessmentText.trim())
+        assessmentsList.push({
+          id: Date.now() + currentGoalIndex + Math.random() * 1000,
+          goalId: approvedGoals[currentGoalIndex].id,
+          description: currentAssessmentText.trim(),
+          isRefined: true
+        })
+      }
     }
 
     console.log('Primary parsing result - found', assessmentsList.length, 'assessments from', approvedGoals.length, 'goals')

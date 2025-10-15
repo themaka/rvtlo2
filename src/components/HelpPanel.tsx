@@ -32,8 +32,18 @@ export const HelpPanel = memo(function HelpPanel({ currentStep, isVisible, onClo
           "You can add 2-5 goals. Don't worry about perfect wording - the AI will help refine them!"
         ]
       },
+      // Alias used by App.tsx when showing the goal review step
+      'review-goals': {
+        title: "Reviewing AI Goal Refinements",
+        content: [
+          "The AI has made your goals more specific and measurable.",
+          "Check that the refined goals still capture your original intent.",
+          "Refined goals should use action verbs and be observable/measurable.",
+          "If you're not satisfied, you can go back and revise your original goals."
+        ]
+      },
       approve: {
-        title: "Reviewing AI Refinements",
+        title: "Reviewing AI Goal Refinements",
         content: [
           "The AI has made your goals more specific and measurable.",
           "Check that the refined goals still capture your original intent.",
@@ -87,6 +97,16 @@ export const HelpPanel = memo(function HelpPanel({ currentStep, isVisible, onClo
         ]
       },
       'objectives-review': {
+        title: "Reviewing Learning Objectives",
+        content: [
+          "Check that objectives are specific, measurable, and use appropriate Bloom's Taxonomy verbs.",
+          "Ensure each objective connects clearly to both your goals and assessment strategies.",
+          "Look for a good mix of cognitive levels (Remember through Create) appropriate for your audience.",
+          "Click 'Revise Objectives' if you need the AI to generate different or additional objectives."
+        ]
+      },
+      // Alias used by App.tsx when showing the objectives review step
+      'review-objectives': {
         title: "Reviewing Learning Objectives",
         content: [
           "Check that objectives are specific, measurable, and use appropriate Bloom's Taxonomy verbs.",
