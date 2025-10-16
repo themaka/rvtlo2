@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { 
   Step
 } from './types'
@@ -21,6 +21,8 @@ import {
   generateLearningObjectives as generateLearningObjectivesService,
   type CourseContext
 } from './services/aiService'
+import { formatFrameworkAsMarkdown } from './utils/exportFramework'
+import { copyToClipboard } from './utils/clipboard'
 import { LoadingIndicator, HelpPanel, AppHeader, ProgressIndicator, StepContainer, ButtonGroup, ErrorBoundary } from './components'
 import { useUIState, useNavigation, useCourseSetup, useGoalsManagement, useAssessments, useObjectives } from './context/AppContext'
 import './App.css'
@@ -208,6 +210,40 @@ function App() {
       setApprovedObjectives
     }
     resetApplication(actions)
+  }
+
+  // Copy framework to clipboard state and handler
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'success' | 'error'>('idle')
+
+  const handleCopyFramework = async () => {
+    try {
+      const exportData = {
+        courseType: courseType || '',
+        courseSubject,
+        originalGoals: goals.map(g => g.description),
+        approvedGoals,
+        approvedAssessments,
+        approvedObjectives,
+        parseAssessment: parseAssessmentText
+      }
+
+      const markdown = formatFrameworkAsMarkdown(exportData)
+      const success = await copyToClipboard(markdown)
+      
+      if (success) {
+        setCopyStatus('success')
+        // Reset status after 3 seconds
+        setTimeout(() => setCopyStatus('idle'), 3000)
+      } else {
+        setCopyStatus('error')
+        // Show error state briefly, then allow retry
+        setTimeout(() => setCopyStatus('idle'), 4000)
+      }
+    } catch (err) {
+      console.error('Error copying framework:', err)
+      setCopyStatus('error')
+      setTimeout(() => setCopyStatus('idle'), 4000)
+    }
   }
 
   const renderIntro = () => (
@@ -1033,7 +1069,26 @@ function App() {
         <p>✅ <strong>{approvedObjectives.length}</strong> learning objectives aligned</p>
       </div>
 
+      {copyStatus === 'success' && (
+        <div className="copy-feedback success-message">
+          ✓ Framework copied to clipboard!
+        </div>
+      )}
+      
+      {copyStatus === 'error' && (
+        <div className="copy-feedback error-message">
+          ⚠ Could not copy automatically. Please use the manual copy option or try again.
+        </div>
+      )}
+
       <ButtonGroup>
+        <button
+          className="primary-button copy-button"
+          onClick={handleCopyFramework}
+          disabled={copyStatus === 'success'}
+        >
+          {copyStatus === 'success' ? '✓ Copied!' : '📋 Copy Framework'}
+        </button>
         <button
           className="secondary-button"
           onClick={resetApp}
