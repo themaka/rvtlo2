@@ -468,16 +468,16 @@ If the model cannot produce JSON, we will fall back to parsing free-form text, b
     callbacks.setLoadingMessage('Processing assessment recommendations...')
     callbacks.setProgress(70)
 
-    console.log('AI Response received:', aiResponse)
-    console.log('=== ASSESSMENT PARSING DEBUG ===')
-    console.log('AI Response length:', aiResponse.length)
-    console.log('First 200 chars:', aiResponse.substring(0, 200))
-    console.log('Contains "ASSESSMENT":', aiResponse.includes('ASSESSMENT'))
-    console.log('Contains "GOAL":', aiResponse.includes('GOAL'))
-    console.log('🔍 FULL RAW AI RESPONSE:')
-    console.log('---START FULL AI RESPONSE---')
-    console.log(aiResponse)
-    console.log('---END FULL AI RESPONSE---')
+    // console.log('AI Response received:', aiResponse)
+    // console.log('=== ASSESSMENT PARSING DEBUG ===')
+    // console.log('AI Response length:', aiResponse.length)
+    // console.log('First 200 chars:', aiResponse.substring(0, 200))
+    // console.log('Contains "ASSESSMENT":', aiResponse.includes('ASSESSMENT'))
+    // console.log('Contains "GOAL":', aiResponse.includes('GOAL'))
+    // console.log('🔍 FULL RAW AI RESPONSE:')
+    // console.log('---START FULL AI RESPONSE---')
+    // console.log(aiResponse)
+    // console.log('---END FULL AI RESPONSE---')
 
     // Try to parse the AI response as JSON first (we now instruct the model to output a strict JSON schema)
     const assessmentsList: Assessment[] = []
@@ -853,63 +853,104 @@ export const generateLearningObjectives = async (
     callbacks.setLoadingMessage('Creating learning objectives with Bloom\'s Taxonomy...')
     callbacks.setProgress(50)
 
-    const prompt = `I am creating learning objectives for a ${context.courseType} on "${context.courseSubject}" using Bloom's Taxonomy and backward design principles.
+    const prompt = `You are creating learning objectives for a ${context.courseType} on "${context.courseSubject}".
 
 INSTRUCTIONAL CONTEXT:
-- Course Type: ${context.courseType}
 - Subject: ${context.courseSubject}
 - Target Audience: ${context.targetAudience}
 - Duration: ${context.instructionDuration}
 
-APPROVED GOALS:
+GOALS AND ASSESSMENTS:
 ${goalsText}
 
-APPROVED ASSESSMENTS:
 ${assessmentsText}
 
-Please create 2-3 specific, measurable learning objectives for each goal. Each objective must:
+TASK: For each goal, create 2-3 learning objectives that are COMPLETELY DIFFERENT from each other.
 
-1. BLOOM'S TAXONOMY: Use action verbs from Bloom's Taxonomy appropriate for the target audience and course duration
-2. BACKWARD DESIGN: Align directly with the goal AND be measurable by the corresponding assessment
-3. AUDIENCE-APPROPRIATE: Consider the cognitive level and prior knowledge of "${context.targetAudience}"
-4. TIME-APPROPRIATE: Realistic for "${context.instructionDuration}" of instruction
-5. SPECIFICITY: Be concrete and observable (avoid vague terms like "appreciate" or "understand")
-6. ALIGNMENT: Ensure the objective can be assessed by the listed assessment method
+ABSOLUTE REQUIREMENTS - EACH OBJECTIVE MUST:
 
-Bloom's Taxonomy Action Verbs by Level:
-- Remember: define, describe, identify, list, name, recall, recognize, retrieve
-- Understand: classify, compare, explain, interpret, paraphrase, predict, summarize
-- Apply: demonstrate, execute, implement, solve, use, apply, operate
-- Analyze: analyze, break down, categorize, compare, contrast, differentiate, examine
-- Evaluate: appraise, critique, defend, evaluate, judge, justify, support
-- Create: assemble, construct, create, design, develop, formulate, generate
+1. Focus on ONE specific sub-skill, concept, or competency within the goal
+2. Use a DIFFERENT action verb from Bloom's Taxonomy
+3. Include DIFFERENT specific details, tools, methods, or contexts
+4. NOT repeat the same sentence structure or phrasing as other objectives
+5. Build in cognitive complexity from foundational to advanced
 
-IMPORTANT: Consider the target audience "${context.targetAudience}" when selecting appropriate Bloom's levels. For example:
-- Introductory courses: Focus more on Remember, Understand, Apply levels
-- Advanced courses: Include more Analyze, Evaluate, Create levels
-- Short workshops: Emphasize Apply and basic Analyze levels
-- Longer courses: Can progress through multiple Bloom's levels
+STEP-BY-STEP PROCESS FOR EACH GOAL:
 
-Format your response EXACTLY like this:
+Step 1: Break the goal into 2-3 DISTINCT components or sub-skills
+Step 2: For each component, write ONE objective using the appropriate Bloom's level
+Step 3: Ensure each objective addresses a DIFFERENT aspect and uses DIFFERENT wording
+
+BLOOM'S TAXONOMY LEVELS (choose the appropriate verb for each objective's complexity):
+- Apply: demonstrate, execute, implement, solve, use, operate, perform
+- Analyze: compare, contrast, differentiate, examine, categorize, break down
+- Evaluate: critique, judge, justify, assess, defend, appraise
+- Create: design, develop, construct, formulate, generate, produce
+
+FORBIDDEN PATTERNS (DO NOT DO THIS):
+❌ "Demonstrate key concepts related to [topic]"
+❌ "Analyze key concepts related to [topic]"  
+❌ "Evaluate key concepts related to [topic]"
+❌ Using the exact same sentence with only the verb changed
+
+REQUIRED PATTERN (DO THIS INSTEAD):
+✅ Each objective must have UNIQUE content after the verb
+✅ Each objective must specify WHAT specific skill/knowledge is being addressed
+✅ Each objective must be independently assessable
+
+EXAMPLE FOR "Students will prepare a digital model for 3D printing":
+
+Component 1 - Software operation:
+• Apply: Operate slicing software to configure basic print parameters including layer height, infill density, and support placement for a given 3D model.
+
+Component 2 - Decision-making:
+• Analyze: Compare how different parameter choices (print speed, support density, infill patterns) affect print time, material usage, and structural integrity.
+
+Component 3 - Quality assessment:
+• Evaluate: Assess a sliced file's readiness for printing by examining whether settings match the model's geometry, material requirements, and functional purpose.
+
+Notice: Each objective focuses on a DIFFERENT skill (operating software vs. comparing options vs. assessing quality) with DIFFERENT specific content.
+
+Now create objectives for each goal following this pattern. Each objective MUST have different content and focus on a distinct aspect of the goal.
+
+CRITICAL FORMAT REQUIREMENTS:
+- Start each goal section with EXACTLY: "OBJECTIVES FOR GOAL [number]:" (no markdown headers, no extra text after the colon)
+- Use bullet points with the bullet character • (not -, *, or ##)
+- Format each objective as: "• [Bloom Level]: [Objective text]"
+- Do NOT add goal titles or descriptions after the colon
+- Do NOT use markdown headers (##, ###, etc.)
+
+CORRECT FORMAT EXAMPLE:
 
 OBJECTIVES FOR GOAL 1:
-• [Bloom Level]: [Specific measurable objective using appropriate action verb]
-• [Bloom Level]: [Specific measurable objective using appropriate action verb]
-• [Bloom Level]: [Specific measurable objective using appropriate action verb]
+• Apply: Operate slicing software to configure basic print parameters including layer height, infill density, and support placement for a given 3D model
+• Analyze: Compare how different parameter choices affect print time, material usage, and structural integrity
+• Evaluate: Assess a sliced file's readiness for printing by examining whether settings match the model's geometry and material requirements
 
 OBJECTIVES FOR GOAL 2:
-• [Bloom Level]: [Specific measurable objective using appropriate action verb]
-• [Bloom Level]: [Specific measurable objective using appropriate action verb]
+• Apply: Use technical vocabulary related to 3D printer components correctly when documenting setup procedures
+• Analyze: Categorize 3D printing terminology into functional groups to explain relationships between aspects of the workflow
 
-Continue for each goal. Ensure objectives progress logically through Bloom's levels when appropriate for the ${context.courseSubject} content.`
+Continue for all goals. Remember: NO REPEATED CONTENT - each objective must address a unique aspect.`
 
     const aiResponse = await callAIFunction(prompt, 'generate-objectives')
 
     callbacks.setLoadingMessage('Processing learning objectives...')
     callbacks.setProgress(80)
 
-    console.log('Objectives AI Response received:', aiResponse)
-    console.log('AI Objectives Response:', aiResponse)
+    console.log('\n\n════════════════════════════════════════════════════════════')
+    console.log('🎯 OBJECTIVES AI RESPONSE DEBUG')
+    console.log('════════════════════════════════════════════════════════════')
+    console.log('Response length:', aiResponse.length, 'characters')
+    console.log('Number of lines:', aiResponse.split('\n').length)
+    console.log('Contains "OBJECTIVES FOR GOAL":', aiResponse.includes('OBJECTIVES FOR GOAL'))
+    console.log('Number of bullet points (•):', (aiResponse.match(/•/g) || []).length)
+    console.log('Number of hyphens (-):', (aiResponse.match(/^-/gm) || []).length)
+    console.log('\n📄 FULL RAW OBJECTIVES AI RESPONSE:')
+    console.log('---START OBJECTIVES RESPONSE---')
+    console.log(aiResponse)
+    console.log('---END OBJECTIVES RESPONSE---')
+    console.log('════════════════════════════════════════════════════════════\n\n')
 
     // Parse AI response and create learning objectives
     const objectivesList: LearningObjective[] = []
@@ -918,20 +959,24 @@ Continue for each goal. Ensure objectives progress logically through Bloom's lev
     let currentGoalIndex = -1
     let objectiveId = Date.now()
 
+    console.log('🔍 Starting to parse objectives from', lines.length, 'lines')
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim()
       
-      // Look for objective headers (more flexible matching)
-      const objectiveMatch = line.match(/^OBJECTIVES\s+FOR\s+GOAL\s+(\d+):\s*$/i)
+      // Look for objective headers (more flexible matching to handle markdown headers and extra text)
+      // Matches: "OBJECTIVES FOR GOAL 1:", "## OBJECTIVES FOR GOAL 1:", "OBJECTIVES FOR GOAL 1: Troubleshooting"
+      const objectiveMatch = line.match(/^#{0,3}\s*OBJECTIVES\s+FOR\s+GOAL\s+(\d+):/i)
       
       if (objectiveMatch) {
         currentGoalIndex = parseInt(objectiveMatch[1]) - 1
-        console.log('Found objectives for goal index:', currentGoalIndex)
+        console.log('✅ Found objectives header for goal index:', currentGoalIndex, '(Goal ID:', approvedGoals[currentGoalIndex]?.id, ')')
       } else if (currentGoalIndex >= 0 && currentGoalIndex < approvedGoals.length) {
         // Look for lines that start with bullet points or contain Bloom level indicators
         if (line.startsWith('•') || line.startsWith('-') || line.startsWith('*')) {
           // Parse individual objective with Bloom level
           const objectiveText = line.replace(/^[•\-*]\s*/, '').trim()
+          console.log('  📌 Parsing bullet point:', objectiveText.substring(0, 80) + '...')
           const bloomMatch = objectiveText.match(/^([^:]+):\s*(.*)$/)
           
           if (bloomMatch) {
@@ -946,7 +991,8 @@ Continue for each goal. Ensure objectives progress logically through Bloom's lev
               description: description,
               assessmentAlignment: relatedAssessment ? relatedAssessment.description : 'Assessment alignment needed'
             })
-            console.log('Added objective:', bloomLevel, description)
+            console.log('  ✅ Added objective for goal', currentGoalIndex + 1, '- Bloom:', bloomLevel)
+            console.log('     Description:', description.substring(0, 100) + (description.length > 100 ? '...' : ''))
           } else {
             // If no colon found, try to extract Bloom level from common patterns
             const bloomWords = ['remember', 'understand', 'apply', 'analyze', 'evaluate', 'create', 'recall', 'identify', 'explain', 'demonstrate', 'compare', 'critique', 'design']
@@ -967,11 +1013,20 @@ Continue for each goal. Ensure objectives progress logically through Bloom's lev
       }
     }
 
-    console.log('Final parsed learning objectives:', objectivesList)
+    console.log('\n📊 OBJECTIVES PARSING SUMMARY:')
+    console.log('  Total objectives parsed:', objectivesList.length)
+    console.log('  Expected objectives (goals × 2-3):', approvedGoals.length * 2, '-', approvedGoals.length * 3)
+    console.log('  Objectives by goal:')
+    approvedGoals.forEach((goal, idx) => {
+      const count = objectivesList.filter(obj => obj.goalId === goal.id).length
+      console.log(`    Goal ${idx + 1}: ${count} objectives`)
+    })
+    console.log('\n📋 Final parsed learning objectives:', JSON.stringify(objectivesList, null, 2))
+    console.log('════════════════════════════════════════════════════════════\n')
 
     // If no objectives were parsed, try alternative parsing or create better fallbacks
     if (objectivesList.length === 0) {
-      console.log('No objectives parsed, creating enhanced fallback objectives')
+      console.log('⚠️ No objectives parsed, creating enhanced fallback objectives')
       const fallbackObjectives = approvedGoals.flatMap((goal, goalIndex) => {
         const relatedAssessment = approvedAssessments.find(a => a.goalId === goal.id)
         const bloomLevels = ['Apply', 'Analyze', 'Evaluate']
