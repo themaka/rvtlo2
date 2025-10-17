@@ -17,7 +17,7 @@ export const AppHeader = memo(function AppHeader({ showHelp, onToggleHelp }: App
           onClick={onToggleHelp}
           aria-label="Toggle help"
         >
-          {showHelp ? '✕ Close Help' : '? Help'}
+          {showHelp ? 'Close' : '?'}
         </button>
       </div>
     </div>

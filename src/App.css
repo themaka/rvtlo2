@@ -8,8 +8,12 @@
   margin: 0 auto;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Helvetica Neue', sans-serif;
   line-height: 1.6;
-  font-size: 16px;
+  font-size: 62.5;
   height: 100vh;
+}
+
+body {
+  font-size: 62.5;
 }
 
 .app-container {
@@ -21,6 +25,7 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   /* allow sticky children to work properly */
   overflow: visible;
+  width: 90vw;
 }
 
 header {
@@ -38,40 +43,46 @@ header {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
 }
 
 .header-content {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   max-width: 900px;
   margin: 0 auto 1rem auto;
-  min-height: 56px;
+  min-height: 2.5rem;
+  width: 100%;
 }
 
 .header-left h1 {
   margin: 0;
-  font-size: 2.25rem;
+  font-size: 2.4rem;
   font-weight: 600;
   letter-spacing: -0.025em;
   line-height: 1.2;
 }
 
 .header-right {
-  display: flex;
-  align-items: center;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
 }
 
 .help-button {
   background: rgba(255, 255, 255, 0.2);
   color: white;
   border: 2px solid rgba(255, 255, 255, 0.3);
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.75rem;
   border-radius: 20px;
-  font-size: 0.9rem;
+  font-size: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-weight: 500;
+  font-weight: 600;
+  white-space: nowrap;
+  min-width: 50px;
+  text-align: center;
 }
 
 .help-button:hover {
@@ -80,17 +91,10 @@ header {
   transform: translateY(-1px);
 }
 
-header h1 {
-  margin: 0 0 1rem 0;
-  font-size: 2.5rem;
-  font-weight: 300;
-}
-
 .progress-indicator {
   display: flex;
   justify-content: center;
   gap: 0.75rem;
-  margin-top: 1rem;
   flex-wrap: wrap;
   max-width: 100%;
   padding: 0 1rem;
@@ -99,12 +103,12 @@ header h1 {
 .progress-indicator span {
   padding: 0.4rem 0.8rem;
   background: #FFFFFF;
-  border-radius: 16px;
+  border-radius: 20px;
   font-size: 0.8rem;
   transition: all 0.3s ease;
   position: relative;
   white-space: nowrap;
-  min-width: 0;
+  min-width: 60px;
   text-align: center;
   color: #000000;
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -141,14 +145,13 @@ header h1 {
 
 main {
   flex: 1;
-  padding: 2rem;
   background: white;
 }
 
 .step-container {
-  max-width: 700px;
+  max-width: 90%;
   margin: 0 auto;
-  line-height: 1.6;
+  /* line-height: 1.6; */
   /* make the step content area fill the viewport below the sticky header */
   min-height: calc(100vh - var(--app-header-height) - 4rem);
   /* min-height: 100vh; */
@@ -159,19 +162,15 @@ main {
 
 .step-container h2 {
   color: #333333;
-  margin-bottom: 1.5rem;
-  font-size: 1.875rem;
-  font-weight: 700;
+  font-size: 1.75rem;
+  font-weight: 600;
   text-align: center;
-  padding-bottom: 1rem;
   border-bottom: 2px solid #e9ecef;
-  line-height: 1.3;
-  letter-spacing: -0.025em;
 }
 
 .step-container h3 {
   color: #000000;
-  margin: 2rem 0 1rem 0;
+  margin: 1rem 0;
   font-size: 1.375rem;
   font-weight: 600;
   line-height: 1.4;
@@ -179,8 +178,6 @@ main {
 
 .step-container p {
   color: #666666;
-  line-height: 1.7;
-  margin-bottom: 1.5rem;
   font-size: 1rem;
 }
 
@@ -188,7 +185,7 @@ main {
   font-style: italic;
   color: #666666;
   margin-bottom: 1.5rem;
-  padding: 1rem;
+  padding: .5rem 1rem;
   background: #f0f9fa;
   border-left: 4px solid #00626D;
   border-radius: 0 4px 4px 0;
@@ -205,7 +202,7 @@ main {
   display: flex;
   gap: 1rem;
   justify-content: center;
-  margin-top: 2rem;
+  margin-top: 1rem;
   flex-wrap: wrap;
 }
 
@@ -301,19 +298,19 @@ main {
 
 .goal-input {
   display: flex;
-  gap: 1rem;
-  margin: 2rem 0;
+  /* gap: 1rem; */
+  /* margin: 2rem 0; */
   align-items: stretch;
   background: white;
-  padding: 1rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e9ecef;
+  padding: rem;
+  border-radius: .5rem;
+  /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); */
+  border: 2px solid #333;
 }
 
 .goal-input input {
   flex: 1;
-  padding: 1rem;
+  padding: .5rem;
   border: 2px solid #e9ecef;
   border-radius: 8px;
   font-size: 1.1rem;
@@ -426,15 +423,19 @@ main {
 }
 
 .goals-list, .refined-goals, .saved-goals {
-  margin: 2rem 0;
-  padding: 1.5rem;
+  margin: 1rem 0;
+  padding: 1rem;
   background: #f8f9fa;
   border-radius: 8px;
   border-left: 4px solid #007FAC;
-  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+.goals-list h3 {
+  padding: 0rem;
+  margin: 0;
 }
 
 .goal-item, .refined-goal-item, .saved-goal-item {
@@ -540,8 +541,7 @@ main {
 
 .confirmation-question {
   text-align: center;
-  margin-top: 2rem;
-  padding: 2rem;
+  padding-bottom: 1rem;
   background: #e7f3ff;
   border-radius: 8px;
   border: 1px solid #b8daff;
@@ -563,49 +563,6 @@ main {
   font-style: italic;
 }
 
-@media (max-width: 768px) {
-  .progress-indicator {
-    flex-direction: column;
-    gap: 0.5rem;
-    align-items: center;
-  }
-  
-  .progress-indicator span {
-    width: auto;
-    max-width: 200px;
-  }
-
-  .button-group {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .objective-input {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .objective-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-
-  .remove-button {
-    align-self: flex-end;
-  }
-}
-
-@media (max-width: 1024px) {
-  .progress-indicator {
-    gap: 0.5rem;
-  }
-  
-  .progress-indicator span {
-    padding: 0.3rem 0.6rem;
-    font-size: 0.75rem;
-  }
-}
 
 /* Goal Comparison Styles */
 .goal-comparison-section {
@@ -959,11 +916,13 @@ details[open] .toggle-indicator {
   border-radius: 4px;
   font-size: 0.8rem;
   font-weight: 600;
+  font-variant: small-caps;
   text-transform: uppercase;
   flex-shrink: 0;
   min-width: 80px;
   width: 15%;
   text-align: center;
+  align-self: center;
 }
 
 .objective-description {
@@ -1833,9 +1792,58 @@ details[open] .toggle-indicator {
 }
 
 /* Responsive adjustments for step container height */
-@media (max-width: 640px) {
+/* @media (max-width: 640px) {
   .step-container {
-    min-height: calc(100vh - var(--app-header-height) - 2rem);
-    padding-top: 0.5rem;
+    min-height: calc(100vh - var(--app-header-height));
+    padding-top: 50.rem;
   }
+} */
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .header-left h1 {
+    padding: 0.rem;
+    font-size: 2rem;
+  }
+
+  .progress-indicator {
+    flex-direction: row;
+    justify-content: center;
+    margin-top: .25rem;
+    /* max-width: 400px; */
+  }
+
+  .header-left {
+    max-width: 65%;
+  }  
+ 
+  .progress-indicator span {
+    width: auto;
+    /* max-width: 200px; */
+    font-size: 0.7rem;
+  }
+
+  .button-group {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .objective-input {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .objective-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .remove-button {
+    align-self: flex-end;
+  }
+}
+
+@media (min-width: 1024px) {
+  
 }
